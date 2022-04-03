@@ -1,11 +1,33 @@
 using Xunit;
 using static Xunit.Assert;
+using System.Text.RegularExpressions;
+using LanguageExt;
+using static LanguageExt.Prelude;
+using System.Collections.Generic;
 
 namespace KotlinNative2Net.Tests;
 
+
+//static class CollectionEx
+//{
+//    internal static IEnumerable<Capture> ToIEnumerable(this CaptureCollection captures)
+//    {
+//        foreach (Capture c in captures)
+//        {
+//            yield return c;
+//        }
+//    }
+//
+//    internal static Seq<Capture> ToSeq(this CaptureCollection captures)
+//    => ToIEnumerable(captures).ToSeq();
+//
+//    internal static Seq<Group> ToSeq(this GroupCollection groups)
+//    => 
+//}
+
 public class ParseTest
 {
-    string MathSymbols = @"
+    const string MathSymbols = @"
 typedef struct {
   /* Service functions. */
   void (*DisposeStablePointer)(math_KNativePtr ptr);
@@ -43,15 +65,19 @@ extern math_ExportedSymbols* math_symbols(void);
 ";
 
 
-    static string Parse(string declaration)
+    static Option<string> Parse(string declaration)
     {
-        return "";
+        string pattern = @"^\s*extern [^*]+\* ([a-z_]+)\(void\)";
+        Match match = Regex.Match(MathSymbols, pattern, RegexOptions.Multiline);
+        Seq<Group> groups = match.Groups.ToSeq();
+        return groups.Map(x => x.ToString()).LastOrNone();
     }
+
 
     [Fact]
     public void FindExport()
     {
-        string export = Parse(MathSymbols);
+        string export = (string)Parse(MathSymbols);
         Equal("math_symbols", export);
     }
 }

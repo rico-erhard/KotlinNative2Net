@@ -9,6 +9,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{8982
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Math", "Samples\Math\Math.csproj", "{9D9EA761-C62D-42F8-8BE6-1A5859E04CDB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KotlinNative2Net.Tests", "KotlinNative2Net.Tests\KotlinNative2Net.Tests.csproj", "{2AF3D022-1A05-4AA0-A1DF-7032679A6894}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -26,6 +28,10 @@ Global
 		{9D9EA761-C62D-42F8-8BE6-1A5859E04CDB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9D9EA761-C62D-42F8-8BE6-1A5859E04CDB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9D9EA761-C62D-42F8-8BE6-1A5859E04CDB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2AF3D022-1A05-4AA0-A1DF-7032679A6894}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2AF3D022-1A05-4AA0-A1DF-7032679A6894}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2AF3D022-1A05-4AA0-A1DF-7032679A6894}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2AF3D022-1A05-4AA0-A1DF-7032679A6894}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{9D9EA761-C62D-42F8-8BE6-1A5859E04CDB} = {898281EF-6DCA-42D2-83BA-E7FC8D559056}
