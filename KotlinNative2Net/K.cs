@@ -40,12 +40,16 @@ public static class Declaration
         return 11;
     }
 
-    public static Option<KStruct> Parse(string text)
+    public static Seq<KStruct> Parse(string text)
     {
         string pattern = @"\s*(typedef )?\s*struct\s+{(.*)} ([^ ]+);";
         Match match = Regex.Match(text, pattern, RegexOptions.Singleline);
-        return LastGroup(match)
-            .Map(x => new KStruct(x, Seq<KFunc>(), Seq<KStruct>()));
+        Seq<string> groups = match.Groups.ToSeq().Map(x => x.ToString());
+        return groups.Count switch
+        {
+            4 => Some(new KStruct(groups[3].ToString(), Seq<KFunc>(), Parse(groups[2].ToString()))).ToSeq(),
+            _ => Seq<KStruct>(),
+        };
     }
 
 }

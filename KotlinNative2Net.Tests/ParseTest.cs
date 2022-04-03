@@ -79,10 +79,18 @@ typedef struct {
 
 
     [Fact]
+    public void ParseKStructsName()
+    {
+        KStruct symbols = Declaration.Parse(MathSymbols).First();
+        Equal("math_ExportedSymbols", symbols.name);
+    }
+
+    [Fact]
     public void ParseKStructs()
     {
-        KStruct symbols = (KStruct)Declaration.Parse(MathSymbols);
+        KStruct symbols = Declaration.Parse(MathSymbols).First();
         Equal("math_ExportedSymbols", symbols.name);
-        //Equal(1, symbols.structs.Count);
+        Equal(1, symbols.structs.Count);
+        // "Minus is missing".
     }
 }
