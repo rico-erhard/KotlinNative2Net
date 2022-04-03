@@ -69,4 +69,12 @@ extern math_ExportedSymbols* math_symbols(void);
         string funcName = (string)Declaration.GetFuncName(funcDeclaration);
         Equal("DisposeStablePointer", funcName);
     }
+
+    [Fact]
+    public void GetFuncNameTestOfLineWithPtrReturnType()
+    {
+        string funcDeclaration = @"math_KType* (*_type)(void);";
+        string funcName = (string)Declaration.GetFuncName(funcDeclaration);
+        Equal("_type", funcName);
+    }
 }
