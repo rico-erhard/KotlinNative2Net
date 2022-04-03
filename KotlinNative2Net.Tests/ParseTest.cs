@@ -7,24 +7,6 @@ using System.Collections.Generic;
 
 namespace KotlinNative2Net.Tests;
 
-
-//static class CollectionEx
-//{
-//    internal static IEnumerable<Capture> ToIEnumerable(this CaptureCollection captures)
-//    {
-//        foreach (Capture c in captures)
-//        {
-//            yield return c;
-//        }
-//    }
-//
-//    internal static Seq<Capture> ToSeq(this CaptureCollection captures)
-//    => ToIEnumerable(captures).ToSeq();
-//
-//    internal static Seq<Group> ToSeq(this GroupCollection groups)
-//    => 
-//}
-
 public class ParseTest
 {
     const string MathSymbols = @"
@@ -65,19 +47,26 @@ extern math_ExportedSymbols* math_symbols(void);
 ";
 
 
-    static Option<string> Parse(string declaration)
-    {
-        string pattern = @"^\s*extern [^*]+\* ([a-z_]+)\(void\)";
-        Match match = Regex.Match(MathSymbols, pattern, RegexOptions.Multiline);
-        Seq<Group> groups = match.Groups.ToSeq();
-        return groups.Map(x => x.ToString()).LastOrNone();
-    }
-
 
     [Fact]
     public void FindExport()
     {
-        string export = (string)Parse(MathSymbols);
+        string export = (string)Declaration.GetExport(MathSymbols);
         Equal("math_symbols", export);
+    }
+
+    [Fact]
+    public void CountNumberOfServiceFunctions()
+    {
+        int count = Declaration.NumberOfServiceFunctions(MathSymbols);
+        Equal(11, count);
+    }
+
+    [Fact]
+    public void GetFuncNameTest()
+    {
+        string funcDeclaration = @"void (*DisposeStablePointer)(math_KNativePtr ptr);";
+        string funcName = (string)Declaration.GetFuncName(funcDeclaration);
+        Equal("DisposeStablePointer", funcName);
     }
 }

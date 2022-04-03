@@ -21,4 +21,8 @@
     </PackageReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\KotlinNative2Net\KotlinNative2Net.csproj" />
+  </ItemGroup>
+
 </Project>
