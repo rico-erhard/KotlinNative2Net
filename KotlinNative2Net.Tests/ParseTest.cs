@@ -43,15 +43,14 @@ typedef struct {
     } root;
   } kotlin;
 } math_ExportedSymbols;
-extern math_ExportedSymbols* math_symbols(void);
 ";
 
-
+    const string externLine = @"extern math_ExportedSymbols* math_symbols(void);";
 
     [Fact]
     public void FindExport()
     {
-        string export = (string)Declaration.GetExport(MathSymbols);
+        string export = (string)Declaration.GetExport(externLine);
         Equal("math_symbols", export);
     }
 
@@ -76,5 +75,14 @@ extern math_ExportedSymbols* math_symbols(void);
         string funcDeclaration = @"math_KType* (*_type)(void);";
         string funcName = (string)Declaration.GetFuncName(funcDeclaration);
         Equal("_type", funcName);
+    }
+
+
+    [Fact]
+    public void ParseKStructs()
+    {
+        KStruct symbols = (KStruct)Declaration.Parse(MathSymbols);
+        Equal("math_ExportedSymbols", symbols.name);
+        //Equal(1, symbols.structs.Count);
     }
 }

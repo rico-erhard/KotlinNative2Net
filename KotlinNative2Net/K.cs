@@ -4,15 +4,9 @@ using static LanguageExt.Prelude;
 
 namespace KotlinNative2Net;
 
-public struct KFunc
-{
-    readonly string name;
-}
+public record KFunc(string name);
 
-public struct KStruct
-{
-    Seq<KFunc> funcs;
-}
+public record KStruct(string name, Seq<KFunc> funcs, Seq<KStruct> structs);
 
 public static class Declaration
 {
@@ -26,6 +20,11 @@ public static class Declaration
     static Option<string> LastGroup(string declaration, string pattern)
     {
         Match match = Regex.Match(declaration, pattern, RegexOptions.Multiline);
+        return LastGroup(match);
+    }
+
+    static Option<string> LastGroup(Match match)
+    {
         Seq<Group> groups = match.Groups.ToSeq();
         return groups.Map(x => x.ToString()).LastOrNone();
     }
@@ -40,4 +39,13 @@ public static class Declaration
     {
         return 11;
     }
+
+    public static Option<KStruct> Parse(string text)
+    {
+        string pattern = @"\s*(typedef )?\s*struct\s+{(.*)} ([^ ]+);";
+        Match match = Regex.Match(text, pattern, RegexOptions.Singleline);
+        return LastGroup(match)
+            .Map(x => new KStruct(x, Seq<KFunc>(), Seq<KStruct>()));
+    }
+
 }
