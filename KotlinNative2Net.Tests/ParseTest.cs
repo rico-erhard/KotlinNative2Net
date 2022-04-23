@@ -9,7 +9,7 @@ namespace KotlinNative2Net.Tests;
 
 public class ParseTest
 {
-    const string MathSymbols = @"
+    const string mathSymbols = @"
 typedef struct {
   /* Service functions. */
   void (*DisposeStablePointer)(math_KNativePtr ptr);
@@ -45,6 +45,19 @@ typedef struct {
 } math_ExportedSymbols;
 ";
 
+    const string twoFuncStructs = @"
+        struct {
+          math_KType* (*_type)(void);
+          math_kref_arithmetic_Minus (*Minus)(math_KInt a, math_KInt b);
+          math_KInt (*subtract)(math_kref_arithmetic_Minus thiz);
+        } Minus;
+        struct {
+          math_KType* (*_type)(void);
+          math_kref_arithmetic_Plus (*Plus)(math_KInt a, math_KInt b);
+          math_KInt (*add)(math_kref_arithmetic_Plus thiz);
+        } Plus;
+";
+
     const string externLine = @"extern math_ExportedSymbols* math_symbols(void);";
 
     [Fact]
@@ -57,7 +70,7 @@ typedef struct {
     [Fact]
     public void CountNumberOfServiceFunctions()
     {
-        int count = Declaration.NumberOfServiceFunctions(MathSymbols);
+        int count = Declaration.NumberOfServiceFunctions(mathSymbols);
         Equal(11, count);
     }
 
@@ -81,14 +94,21 @@ typedef struct {
     [Fact]
     public void ParseKStructsName()
     {
-        KStruct symbols = Declaration.Parse(MathSymbols).First();
+        KStruct symbols = Declaration.Parse(mathSymbols).First();
         Equal("math_ExportedSymbols", symbols.Name);
+    }
+
+    [Fact]
+    public void ParseTwoStructs()
+    {
+        Seq<KStruct> symbols = Declaration.Parse(twoFuncStructs);
+        Equal(2, symbols.Count);
     }
 
     [Fact]
     public void ParseKStructs()
     {
-        KStruct symbols = Declaration.Parse(MathSymbols).First();
+        KStruct symbols = Declaration.Parse(mathSymbols).First();
         Equal("math_ExportedSymbols", symbols.Name);
         Equal(1, symbols.Childs.Count);
         // "Minus is missing".
