@@ -4,9 +4,9 @@ using static LanguageExt.Prelude;
 
 namespace KotlinNative2Net;
 
-public record KFunc(string name);
+public record KFunc(string Name);
 
-public record KStruct(string name, Seq<KFunc> funcs, Seq<KStruct> structs);
+public record KStruct(string Name, Seq<KFunc> Funcs, Seq<KStruct> Childs);
 
 public static class Declaration
 {
