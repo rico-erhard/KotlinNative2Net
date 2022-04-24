@@ -46,16 +46,16 @@ typedef struct {
 ";
 
     const string twoFuncStructs = @"
-        struct {
-          math_KType* (*_type)(void);
-          math_kref_arithmetic_Minus (*Minus)(math_KInt a, math_KInt b);
-          math_KInt (*subtract)(math_kref_arithmetic_Minus thiz);
-        } Minus;
-        struct {
-          math_KType* (*_type)(void);
-          math_kref_arithmetic_Plus (*Plus)(math_KInt a, math_KInt b);
-          math_KInt (*add)(math_kref_arithmetic_Plus thiz);
-        } Plus;
+struct {
+  math_KType* (*_type)(void);
+  math_kref_arithmetic_Minus (*Minus)(math_KInt a, math_KInt b);
+  math_KInt (*subtract)(math_kref_arithmetic_Minus thiz);
+} Minus;
+struct {
+  math_KType* (*_type)(void);
+  math_kref_arithmetic_Plus (*Plus)(math_KInt a, math_KInt b);
+  math_KInt (*add)(math_kref_arithmetic_Plus thiz);
+} Plus;
 ";
 
     const string externLine = @"extern math_ExportedSymbols* math_symbols(void);";
