@@ -186,8 +186,8 @@ math_kref_kotlin_Unit (*createNullableUnit)(void);
         Equal(12, match.Groups[3].Captures.Count);
     }
 
-    [Fact]
-    public void ParseKStructsWithFunctionNames()
+    (KStruct, KStruct, KStruct, KStruct, KStruct, KStruct)
+        ParseMathSymbols()
     {
         KStruct symbols = Declaration.Parse(mathSymbols).First();
         KStruct kotlin = symbols.Childs.Head;
@@ -195,9 +195,18 @@ math_kref_kotlin_Unit (*createNullableUnit)(void);
         KStruct arithmetic = root.Childs.Head;
         KStruct minus = arithmetic.Childs[0];
         KStruct plus = arithmetic.Childs[1];
+        return (symbols, kotlin, root, arithmetic, minus, plus);
+    }
+
+    [Fact]
+    public void ParseKStructsWithFunctionNames()
+    {
+        (KStruct symbols, KStruct kotlin, KStruct root, KStruct arithmetic,
+            KStruct minus, KStruct plus)= ParseMathSymbols();
 
         Equal(12, symbols.Funcs.Count);
         Equal(3, minus.Funcs.Count);
         Equal(3, plus.Funcs.Count);
+        True(plus.Funcs.Map(x => x.Name).Contains("add"));
     }
 }
