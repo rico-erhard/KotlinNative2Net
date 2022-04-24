@@ -45,6 +45,14 @@ typedef struct {
 } math_ExportedSymbols;
 ";
 
+    const string minusStruct = @"
+struct {
+  math_KType* (*_type)(void);
+  math_kref_arithmetic_Minus (*Minus)(math_KInt a, math_KInt b);
+  math_KInt (*subtract)(math_kref_arithmetic_Minus thiz);
+} Minus;
+";
+
     const string twoFuncStructs = @"
 struct {
   math_KType* (*_type)(void);
@@ -124,5 +132,13 @@ struct {
 
         Equal(1, symbols.Childs.Count);
         Equal(2, arithmetic.Childs.Count);
+    }
+
+    [Fact]
+    public void ParseFunctions()
+    {
+        string oneFunc = @"math_kref_arithmetic_Plus (*Plus)(math_KInt a, math_KInt b);";
+        Match match = Declaration.ParseOneFunction(oneFunc);
+        Equal(2, match.Groups[5].Captures.Count);
     }
 }

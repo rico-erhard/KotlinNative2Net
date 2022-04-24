@@ -40,15 +40,11 @@ public static class Declaration
         return 11;
     }
 
-    public static Seq<KStruct> ParseStructs(string text)
+    public static Match ParseOneFunction(string text)
     {
-        Match match = ParseFull(text);
-        Seq<string> groups = match.Groups.ToSeq().Map(x => x.ToString());
-        return groups.Count switch
-        {
-            4 => Some(new KStruct(groups[3].ToString(), Seq<KFunc>(), ParseStructs(groups[2].ToString()))).ToSeq(),
-            _ => Seq<KStruct>(),
-        };
+        const string pattern = @"\s*(\w+)\s+\(\*(\w+)\)\((\s*(\w+) (\w+),?)+\);";
+        Match match = Regex.Match(text, pattern, RegexOptions.Singleline);
+        return match;
     }
 
     static Match ParseFull(string text)
