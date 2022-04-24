@@ -109,9 +109,20 @@ struct {
     public void ParseKStructs()
     {
         KStruct symbols = Declaration.Parse(mathSymbols).First();
+        KStruct kotlin = symbols.Childs.Head;
+        KStruct root = kotlin.Childs.Head;
+        KStruct arithmetic = root.Childs.Head;
+        KStruct minus = arithmetic.Childs[0];
+        KStruct plus = arithmetic.Childs[1];
+
         Equal("math_ExportedSymbols", symbols.Name);
+        Equal("kotlin", kotlin.Name);
+        Equal("root", root.Name);
+        Equal("arithmetic", arithmetic.Name);
+        Equal("Plus", plus.Name);
+        Equal("Minus", minus.Name);
+
         Equal(1, symbols.Childs.Count);
-        // "Minus is missing".
-        Equal(2, symbols.Childs.Head.Childs.Head.Childs.Head.Childs.Count);
+        Equal(2, arithmetic.Childs.Count);
     }
 }

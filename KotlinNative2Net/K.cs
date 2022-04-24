@@ -90,5 +90,4 @@ public static class Declaration
 
         return go(sequenceFound ? sequence : full);
     }
-
 }
