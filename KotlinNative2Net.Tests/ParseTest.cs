@@ -197,5 +197,7 @@ math_kref_kotlin_Unit (*createNullableUnit)(void);
         KStruct plus = arithmetic.Childs[1];
 
         Equal(12, symbols.Funcs.Count);
+        Equal(3, minus.Funcs.Count);
+        Equal(3, plus.Funcs.Count);
     }
 }
