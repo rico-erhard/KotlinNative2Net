@@ -40,14 +40,6 @@ public static class Declaration
         return 11;
     }
 
-    public static Match ParseOneFunction(string text)
-    {
-        //const string pattern = @"\s*(\w+)\s+\(\*(\w+)\)\((\s*(\w+) (\w+),?)+\);";
-        const string pattern = @"\s*(\w+\*?)\s+\(\*(\w+)\)\((void|(\s*(\w+\*?) (\w+),?)+)\);";
-        Match match = Regex.Match(text, pattern, RegexOptions.Singleline);
-        return match;
-    }
-
     public static Match ParseFunctions(string text)
     {
         const string pattern = @"(\s*(\w+\*?)\s+\(\*(\w+)\)\((void|(\s*(\w+\*?) (\w+),?)+)\);)+";
