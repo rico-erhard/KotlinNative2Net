@@ -44,7 +44,7 @@ public static class Declaration
 
     const string functionsPattern = "(" + commentPattern + @"\s*(\w+\*?)\s+\(\*(\w+)\)\((\s*(\w+\*?)\s*(\w+)?,?)+\);\s*" + ")*";
 
-    const string structStart = @"(?:\s*(typedef )?\s*struct\s+{" + commentPattern + functionsPattern + commentPattern;
+    const string structStart = @"(\s*(typedef )?\s*struct\s+{" + commentPattern + functionsPattern + commentPattern;
 
     public static Match ParseFunctions(string text)
     {
@@ -52,32 +52,39 @@ public static class Declaration
         return match;
     }
 
-    static Match ParseFull(string text)
-    {
-        //const string pattern = @"(\s*(typedef )?\s*struct\s+{(.*)} ([^ ]+);\s+)+";
-        const string pattern = structStart + @"(.*)} ([^ ]+);\s+)+";
-        Match match = Regex.Match(text, pattern, RegexOptions.Singleline);
-        return match;
-    }
-
-    static Match ParseSequence(string text)
-    {
-        //const string pattern = @"(\s*(typedef )?\s*struct\s+{([^}]*)} ([^ ]+);\s+)+";
-        const string pattern = structStart + @"([^}]*)} ([^ ]+);\s+)+";
-        Match match = Regex.Match(text, pattern, RegexOptions.Singleline);
-        return match;
-    }
-
     public static Seq<KStruct> Parse(string text)
     {
-        const int nameGroup = 9;
+        static Match ParseFull(string text)
+        {
+            const string pattern = structStart + @"(.*)} ([^ ]+);\s+)+";
+            Match match = Regex.Match(text, pattern, RegexOptions.Singleline);
+            return match;
+        }
+
+        static Match ParseSequence(string text)
+        {
+            //const string pattern = structStart + @"([^}]*)} ([^ ]+);\s+)+";
+            const string pattern = structStart + @"(.*?)} ([^ ]+);\s+)+";
+            Match match = Regex.Match(text, pattern, RegexOptions.Singleline);
+            return match;
+        }
+
+        const int nameGroup = 10;
 
         static Seq<KStruct> go(Match match)
         {
             Seq<string> inner = match.Groups[nameGroup - 1].Captures.ToSeq().Map(x => x.ToString());
             Seq<string> names = match.Groups[nameGroup].Captures.ToSeq().Map(x => x.ToString());
+            Seq<KFunc> fs = match.Groups[4].Captures.ToSeq().Map(x => new KFunc(x.ToString()));
             return names.Zip(inner)
-                .Map(t => new KStruct(t.Left, Seq<KFunc>(), Parse(t.Right)));
+                .Map(t => new KStruct(t.Left, fs, Parse(t.Right)));
+        }
+
+        static Seq<KStruct> goSequence(Match match)
+        {
+            return Range(0, match.Groups[1].Captures.Count)
+                .Bind(k => Parse(match.Groups[1].Captures[k].Value))
+                .ToSeq();
         }
 
         static Option<Capture> lastName(Match full)
@@ -89,10 +96,12 @@ public static class Declaration
         Option<Capture> fullName = lastName(full);
         Option<Capture> lastInSequenceName = lastName(sequence);
 
-        bool sequenceFound = lastInSequenceName
+        bool multiple = 1 < sequence.Groups[1].Captures.Count;
+        bool notNested = lastInSequenceName
             .Map(x => x.Value == fullName.Map(x => x.Value))
             .IfNone(false);
+        bool isSequence = multiple && notNested;
 
-        return go(sequenceFound ? sequence : full);
+        return isSequence ? goSequence(sequence) : go(full);
     }
 }

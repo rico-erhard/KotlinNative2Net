@@ -185,4 +185,17 @@ math_kref_kotlin_Unit (*createNullableUnit)(void);
         Match match = Declaration.ParseFunctions(serviceFunctions);
         Equal(12, match.Groups[3].Captures.Count);
     }
+
+    [Fact]
+    public void ParseKStructsWithFunctionNames()
+    {
+        KStruct symbols = Declaration.Parse(mathSymbols).First();
+        KStruct kotlin = symbols.Childs.Head;
+        KStruct root = kotlin.Childs.Head;
+        KStruct arithmetic = root.Childs.Head;
+        KStruct minus = arithmetic.Childs[0];
+        KStruct plus = arithmetic.Childs[1];
+
+        Equal(12, symbols.Funcs.Count);
+    }
 }
