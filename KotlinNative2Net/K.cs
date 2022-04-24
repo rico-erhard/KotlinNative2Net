@@ -53,30 +53,17 @@ public static class Declaration
 
     static Match ParseFull(string text)
     {
-        string pattern = @"(\s*(typedef )?\s*struct\s+{(.*)} ([^ ]+);\s+)+";
+        const string pattern = @"(\s*(typedef )?\s*struct\s+{(.*)} ([^ ]+);\s+)+";
         Match match = Regex.Match(text, pattern, RegexOptions.Singleline);
         return match;
     }
 
-    private static Match ParseSequence(string text)
+    static Match ParseSequence(string text)
     {
-        string pattern = @"(\s*(typedef )?\s*struct\s+{([^}]*)} ([^ ]+);\s+)+";
+        const string pattern = @"(\s*(typedef )?\s*struct\s+{([^}]*)} ([^ ]+);\s+)+";
         Match match = Regex.Match(text, pattern, RegexOptions.Singleline);
         return match;
     }
-
-    public static Seq<KStruct> ParseSequential(string text)
-    {
-        static Seq<KStruct> go(Match match)
-        {
-            Seq<string> funcs = match.Groups[3].Captures.ToSeq().Map(x => x.ToString());
-            Seq<string> names = match.Groups[4].Captures.ToSeq().Map(x => x.ToString());
-            return names.Zip(funcs).Map(t => new KStruct(t.Left, Seq<KFunc>(), ParseSequential(t.Right)));
-        }
-        Match match = ParseSequence(text);
-        return go(match);
-    }
-
 
     public static Seq<KStruct> Parse(string text)
     {
@@ -88,15 +75,18 @@ public static class Declaration
                 .Map(t => new KStruct(t.Left, Seq<KFunc>(), Parse(t.Right)));
         }
 
-        static Option<Capture> getLastName(Match full)
+        static Option<Capture> lastName(Match full)
         => full.Groups[4].Captures.LastOrNone();
 
         Match sequence = ParseSequence(text);
         Match full = ParseFull(text);
 
-        Option<Capture> name = getLastName(full);
-        Option<Capture> lastNameInSequence = getLastName(sequence);
-        bool sequenceFound = lastNameInSequence.Map(x => x.Value == name.Map(x => x.Value)).IfNone(false);
+        Option<Capture> fullName = lastName(full);
+        Option<Capture> lastInSequenceName = lastName(sequence);
+
+        bool sequenceFound = lastInSequenceName
+            .Map(x => x.Value == fullName.Map(x => x.Value))
+            .IfNone(false);
 
         return go(sequenceFound ? sequence : full);
     }
