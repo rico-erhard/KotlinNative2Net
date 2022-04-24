@@ -135,10 +135,25 @@ struct {
     }
 
     [Fact]
-    public void ParseFunctions()
+    public void ParseOneFunction()
     {
         string oneFunc = @"math_kref_arithmetic_Plus (*Plus)(math_KInt a, math_KInt b);";
-        Match match = Declaration.ParseOneFunction(oneFunc);
-        Equal(2, match.Groups[5].Captures.Count);
+        Match match = Declaration.ParseFunctions(oneFunc);
+        Equal(2, match.Groups[7].Captures.Count);
+    }
+
+    [Fact]
+    public void ParseFunctionWithoutParameters()
+    {
+        string oneFunc = @"math_KType* (*_type)(void);";
+        Match match = Declaration.ParseFunctions(oneFunc);
+        Single(match.Captures);
+    }
+
+    [Fact]
+    public void ParseThreeFunctions()
+    {
+        Match match = Declaration.ParseFunctions(minusStruct);
+        Equal(3, match.Groups[3].Captures.Count);
     }
 }
