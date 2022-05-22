@@ -4,7 +4,8 @@ using static LanguageExt.Prelude;
 
 namespace KotlinNative2Net;
 
-public record KFunc(string Name);
+public record KParam(string Type, string Name);
+public record KFunc(string Name, Seq<KParam> Params);
 
 public record KStruct(string Name, Seq<KFunc> Funcs, Seq<KStruct> Childs);
 
@@ -52,6 +53,16 @@ public static class Declaration
         return match;
     }
 
+    public static Option<KFunc> ParseSignature(string funcSignature)
+    {
+        Match match = Regex.Match(funcSignature, functionsPattern);
+        Option<string> funcName = match.Groups[3].Captures.ToSeq().Map(x => x.ToString()).HeadOrNone();
+        Seq<string> paramTypes = match.Groups[5].Captures.ToSeq().Map(x => x.ToString());
+        Seq<string> paramNames = match.Groups[6].Captures.ToSeq().Map(x => x.ToString());
+        return funcName.Map(x => new KFunc(x, paramTypes.Zip(paramNames)
+            .Map(t => new KParam(t.Left, t.Right))));
+    }
+
     public static Seq<KStruct> Parse(string text)
     {
         static Match ParseFull(string text)
@@ -75,7 +86,7 @@ public static class Declaration
         {
             Seq<string> inner = match.Groups[nameGroup - 1].Captures.ToSeq().Map(x => x.ToString());
             Seq<string> names = match.Groups[nameGroup].Captures.ToSeq().Map(x => x.ToString());
-            Seq<KFunc> fs = match.Groups[5].Captures.ToSeq().Map(x => new KFunc(x.ToString()));
+            Seq<KFunc> fs = match.Groups[5].Captures.ToSeq().Map(x => new KFunc(x.ToString(), Seq<KParam>()));
             return names.Zip(inner)
                 .Map(t => new KStruct(t.Left, fs, Parse(t.Right)));
         }

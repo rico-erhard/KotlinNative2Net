@@ -165,6 +165,16 @@ math_kref_kotlin_Unit (*createNullableUnit)(void);
     }
 
     [Fact]
+    public void ParseOneFunctionSignature()
+    {
+        string oneFunc = @"math_kref_arithmetic_Plus (*Plus)(math_KInt a, math_KInt b);";
+        KFunc func = (KFunc)Declaration.ParseSignature(oneFunc);
+        Equal("Plus", func.Name);
+        Equal(2, func.Params.Count);
+        Equal("a", func.Params[0].Name);
+    }
+
+    [Fact]
     public void ParseFunctionWithoutParameters()
     {
         string oneFunc = @"math_KType* (*_type)(void);";
@@ -208,5 +218,17 @@ math_kref_kotlin_Unit (*createNullableUnit)(void);
         Equal(3, minus.Funcs.Count);
         Equal(3, plus.Funcs.Count);
         True(plus.Funcs.Map(x => x.Name).Contains("add"));
+    }
+
+    //[Fact]
+    public void ParseAndCheckParameters()
+    {
+        (KStruct symbols, KStruct kotlin, KStruct root, KStruct arithmetic,
+            KStruct minus, KStruct plus)= ParseMathSymbols();
+
+        Equal(3, plus.Funcs.Count);
+        KFunc ctor = (KFunc)plus.Funcs.Find(x => "Plus" == x.Name);
+        Equal(2, ctor.Params.Count);
+
     }
 }
