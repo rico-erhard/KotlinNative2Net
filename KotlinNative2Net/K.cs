@@ -5,7 +5,7 @@ using static LanguageExt.Prelude;
 namespace KotlinNative2Net;
 
 public record KParam(string Type, string Name);
-public record KFunc(string Name, Seq<KParam> Params);
+public record KFunc(string Name, Seq<KParam> Params, KParam RetVal);
 
 public record KStruct(string Name, Seq<KFunc> Funcs, Seq<KStruct> Childs);
 
@@ -56,11 +56,15 @@ public static class Declaration
     public static Option<KFunc> ParseSignature(string funcSignature)
     {
         Match match = Regex.Match(funcSignature, functionsPattern);
+        Option<string> retValTypes = match.Groups[2].Captures.ToSeq().Map(x => x.ToString()).HeadOrNone();
         Option<string> funcName = match.Groups[3].Captures.ToSeq().Map(x => x.ToString()).HeadOrNone();
         Seq<string> paramTypes = match.Groups[5].Captures.ToSeq().Map(x => x.ToString());
         Seq<string> paramNames = match.Groups[6].Captures.ToSeq().Map(x => x.ToString());
-        return funcName.Map(x => new KFunc(x, paramTypes.Zip(paramNames)
-            .Map(t => new KParam(t.Left, t.Right))));
+        return from name in funcName
+        from retValType in retValTypes
+        select new KFunc(name,
+            paramTypes.Zip(paramNames).Map(t => new KParam(t.Left, t.Right)),
+            new KParam(retValType, "RetVal"));
     }
 
     public static Seq<KStruct> Parse(string text)

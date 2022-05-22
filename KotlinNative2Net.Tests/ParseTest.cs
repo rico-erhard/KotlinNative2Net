@@ -165,13 +165,23 @@ math_kref_kotlin_Unit (*createNullableUnit)(void);
     }
 
     [Fact]
-    public void ParseOneFunctionSignature()
+    public void ParseOneFunctionSignatureParams()
     {
         string oneFunc = @"math_kref_arithmetic_Plus (*Plus)(math_KInt a, math_KInt b);";
         KFunc func = (KFunc)Declaration.ParseSignature(oneFunc);
         Equal("Plus", func.Name);
         Equal(2, func.Params.Count);
         Equal("a", func.Params[0].Name);
+        Equal("math_KInt", func.Params[0].Type);
+        Equal("b", func.Params[1].Name);
+    }
+
+    [Fact]
+    public void ParseOneFunctionSignatureRetVal()
+    {
+        string oneFunc = @"math_kref_arithmetic_Plus (*Plus)(math_KInt a, math_KInt b);";
+        KFunc func = (KFunc)Declaration.ParseSignature(oneFunc);
+        Equal("math_kref_arithmetic_Plus", func.RetVal.Type);
     }
 
     [Fact]
