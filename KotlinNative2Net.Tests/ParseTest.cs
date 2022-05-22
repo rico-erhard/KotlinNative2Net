@@ -222,7 +222,7 @@ math_kref_kotlin_Unit (*createNullableUnit)(void);
     public void ParseKStructsWithFunctionNames()
     {
         (KStruct symbols, KStruct kotlin, KStruct root, KStruct arithmetic,
-            KStruct minus, KStruct plus)= ParseMathSymbols();
+            KStruct minus, KStruct plus) = ParseMathSymbols();
 
         Equal(12, symbols.Funcs.Count);
         Equal(3, minus.Funcs.Count);
@@ -234,10 +234,18 @@ math_kref_kotlin_Unit (*createNullableUnit)(void);
     public void ParseAndCheckParameters()
     {
         (KStruct symbols, KStruct kotlin, KStruct root, KStruct arithmetic,
-            KStruct minus, KStruct plus)= ParseMathSymbols();
+            KStruct minus, KStruct plus) = ParseMathSymbols();
 
         Equal(3, plus.Funcs.Count);
         KFunc ctor = (KFunc)plus.Funcs.Find(x => "Plus" == x.Name);
         Equal(2, ctor.Params.Count);
+
+        // math_KType* (*_type)(void);
+        KFunc getType = (KFunc)plus.Funcs.Find(x => "_type" == x.Name);
+        Equal(0, getType.Params.Count);
+
+        //void (*DisposeString)(const char* string);
+        KFunc disposeString = (KFunc)symbols.Funcs.Find(x => "DisposeString" == x.Name);
+        Equal("void", disposeString.RetVal.Type);
     }
 }
