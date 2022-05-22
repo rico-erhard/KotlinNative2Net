@@ -220,7 +220,7 @@ math_kref_kotlin_Unit (*createNullableUnit)(void);
         True(plus.Funcs.Map(x => x.Name).Contains("add"));
     }
 
-    //[Fact]
+    [Fact]
     public void ParseAndCheckParameters()
     {
         (KStruct symbols, KStruct kotlin, KStruct root, KStruct arithmetic,
@@ -229,6 +229,5 @@ math_kref_kotlin_Unit (*createNullableUnit)(void);
         Equal(3, plus.Funcs.Count);
         KFunc ctor = (KFunc)plus.Funcs.Find(x => "Plus" == x.Name);
         Equal(2, ctor.Params.Count);
-
     }
 }

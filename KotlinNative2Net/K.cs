@@ -86,7 +86,8 @@ public static class Declaration
         {
             Seq<string> inner = match.Groups[nameGroup - 1].Captures.ToSeq().Map(x => x.ToString());
             Seq<string> names = match.Groups[nameGroup].Captures.ToSeq().Map(x => x.ToString());
-            Seq<KFunc> fs = match.Groups[5].Captures.ToSeq().Map(x => new KFunc(x.ToString(), Seq<KParam>()));
+            Seq<KFunc> fs = match.Groups[3].Captures.ToSeq() .Map(x => x.ToString())
+                .Bind(x => ParseSignature(x).ToSeq());
             return names.Zip(inner)
                 .Map(t => new KStruct(t.Left, fs, Parse(t.Right)));
         }
