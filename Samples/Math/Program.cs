@@ -61,6 +61,7 @@ IntPtr symbols = symbolsFunc();
 
 int step = IntPtr.Size;
 
+// FindOffset has a bug. This is the minusType.
 Void_IntPtr plusType = GetFunc<Void_IntPtr>(symbols, plusTypeOffset);
 PlusCtor plusCtor = GetFunc<PlusCtor>(symbols, plusCtorOffset);
 MinusCtor minusCtor = GetFunc<MinusCtor>(symbols, minusCtorOffset);
@@ -71,24 +72,41 @@ Void_IntPtr createNullableUnit = GetFunc<Void_IntPtr>(symbols, createNullableUni
 PtrPtr_Int isInstance = GetFunc<PtrPtr_Int>(symbols, isInstanceOffset);
 Ptr_Void disposeStablePointer = GetFunc<Ptr_Void>(symbols, disposeStablePointerOffset);
 
+void Dispose(IntPtr kObj)
+{
+    IntPtr pinnedAddr = Marshal.ReadIntPtr(kObj);
+    disposeStablePointer(pinnedAddr);
+}
+
+bool IsInstance(IntPtr kObj, IntPtr type)
+{
+    //IntPtr pinnedAddr = Marshal.ReadIntPtr(kObj);
+    return 0 != isInstance(kObj, type);
+}
+
+
 PrintHexed(symbols);
 
 IntPtr plus = plusCtor(2, 3);
 IntPtr plusTypeInst = plusType();
 IntPtr minus = minusCtor(2, 3);
+IntPtr unit = createNullableUnit();
 
+WriteLine(unit);
 WriteLine(plus);
-WriteLine($"plus is plusType = {0 == isInstance(plus, plusTypeInst)}");
-WriteLine($"minus is plusType = {0 == isInstance(minus, plusTypeInst)}");
+WriteLine($"plus is plusType = {IsInstance(plus, plusTypeInst)}");
+WriteLine($"minus is plusType = {IsInstance(minus, plusTypeInst)}");
+WriteLine($"unit is plusType = {IsInstance(unit, plusTypeInst)}");
 
 WriteLine($"2 + 3 = {addMethod(plus)}");
 WriteLine($"2 - 3 = {subtractMethod(minus)}");
 
-IntPtr plusPinnedAddr = Marshal.ReadIntPtr(plus);
-disposeStablePointer(plusPinnedAddr);
 
-IntPtr unit = createNullableUnit();
-WriteLine(unit);
+
+
+Dispose(plus);
+Dispose(minus);
+Dispose(unit);
 
 
 delegate IntPtr SymbolsFunc();
