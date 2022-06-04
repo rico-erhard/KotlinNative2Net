@@ -1,10 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <AssemblyName>MathNet</AssemblyName>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\KotlinNative2Net\KotlinNative2Net.csproj" />
+    <PackageReference Include="LanguageExt.Core" Version="4.0.4" />
+  </ItemGroup>
+
 
 </Project>
