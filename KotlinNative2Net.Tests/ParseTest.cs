@@ -248,4 +248,22 @@ math_kref_kotlin_Unit (*createNullableUnit)(void);
         KFunc disposeString = (KFunc)symbols.Funcs.Find(x => "DisposeString" == x.Name);
         Equal("void", disposeString.RetVal.Type);
     }
+
+    [Fact]
+    public void ParseAndCheckOffset()
+    {
+        (KStruct symbols, KStruct kotlin, KStruct root, KStruct arithmetic,
+            KStruct minus, KStruct plus) = ParseMathSymbols();
+
+        KFunc disposeString = (KFunc)symbols.Funcs.Find(x => "DisposeString" == x.Name);
+        Equal("void", disposeString.RetVal.Type);
+
+        Equal(1, (int)symbols.FindOffset(disposeString));
+
+        KFunc plusCtor = (KFunc)plus.Funcs.Find(x => "Plus" == x.Name);
+        Equal(16, (int)symbols.FindOffset(plusCtor));
+
+        KFunc add = (KFunc)plus.Funcs.Find(x => "add" == x.Name);
+        Equal(17, (int)symbols.FindOffset(add));
+    }
 }
