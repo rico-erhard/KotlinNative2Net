@@ -42,6 +42,9 @@ int addOffset = (int)findOffset(addDecl);
 KFunc minusCtorDecl = (KFunc)minusDecl.Funcs.Find(x => "Minus" == x.Name);
 int minusCtorOffset = (int)findOffset(minusCtorDecl);
 
+KFunc minusTypeDecl = (KFunc)minusDecl.Funcs.Find(x => "_type" == x.Name);
+int minusTypeOffset = (int)findOffset(minusTypeDecl);
+
 KFunc subtractMethodDecl = (KFunc)minusDecl.Funcs.Find(x => "subtract" == x.Name);
 int substractOffset = (int)findOffset(subtractMethodDecl);
 
@@ -81,29 +84,39 @@ void Dispose(IntPtr kObj)
 bool IsInstance(IntPtr kObj, IntPtr type)
 => 0 != isInstance(kObj, type);
 
-
 PrintHexed(symbols);
 
-IntPtr plus = plusCtor(2, 3);
+IntPtr plus5 = plusCtor(2, 3);
+IntPtr plus7 = plusCtor(3, 4);
 IntPtr plusTypeInst = plusType();
+IntPtr plusTypeInst2 = plusType();
 IntPtr minus = minusCtor(2, 3);
 IntPtr unit = createNullableUnit();
+IntPtr unit2 = createNullableUnit();
 
-WriteLine(unit);
-WriteLine(plus);
-WriteLine($"plus is plusType = {IsInstance(plus, plusTypeInst)}");
+PrintHexed(unit);
+PrintHexed(unit2);
+
+PrintHexed(plusTypeInst);
+PrintHexed(plusTypeInst2);
+
+PrintHexed(plus5);
+PrintHexed(plus7);
+
+WriteLine($"plus is plusType = {IsInstance(plus5, plusTypeInst)}");
 WriteLine($"minus is plusType = {IsInstance(minus, plusTypeInst)}");
 WriteLine($"unit is plusType = {IsInstance(unit, plusTypeInst)}");
 
-WriteLine($"2 + 3 = {addMethod(plus)}");
+WriteLine($"2 + 3 = {addMethod(plus5)}");
 WriteLine($"2 - 3 = {subtractMethod(minus)}");
 
-
-
-
-Dispose(plus);
+Dispose(plus5);
+Dispose(plus7);
+Dispose(plusTypeInst);
+Dispose(plusTypeInst2);
 Dispose(minus);
 Dispose(unit);
+Dispose(unit2);
 
 
 delegate IntPtr SymbolsFunc();
@@ -117,6 +130,8 @@ delegate IntPtr Void_IntPtr();
 delegate IntPtr Ptr_Void(IntPtr ptr);
 
 delegate int PtrPtr_Int(IntPtr inst, IntPtr type);
+
+delegate int PtrPtr_Byte(IntPtr inst, IntPtr type);
 
 delegate int Ptr_Int(IntPtr inst);
 
