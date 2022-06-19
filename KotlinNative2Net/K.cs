@@ -1,5 +1,4 @@
-﻿using System;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using LanguageExt;
 using static LanguageExt.Prelude;
 
@@ -7,9 +6,9 @@ namespace KotlinNative2Net;
 
 public record KParam(string Type, string Name);
 
-public record KFunc(string Name, Seq<KParam> Params, KParam RetVal);
+public record KFunc(string FullName, string Name, Seq<KParam> Params, KParam RetVal);
 
-public record KStruct(string Name, Seq<KFunc> Funcs, Seq<KStruct> Childs);
+public record KStruct(string FullName, string Name, Seq<KFunc> Funcs, Seq<KStruct> Childs);
 
 public record KHeader(string SymbolsType, string SymbolsFunc, Seq<KStruct> Childs);
 
@@ -24,20 +23,69 @@ public static class KStructEx
         return go(s, Seq<KStruct>().Add(s));
     }
 
+    static Seq<int> Offsets(this KStruct s)
+    {
+        static Seq<int> go(KStruct start, Seq<int> acc)
+        {
+            int nextOffset = acc.LastOrDefault() + start.Funcs.Length;
+            return start.Childs.Fold(
+                acc.Add(nextOffset),
+                (acc, next) => go(next, acc));
+        }
+        return go(s, Seq<int>().Add(0));
+    }
+
     public static Option<int> FindOffset(this KStruct s, KFunc func)
     {
-        static Seq<KFunc> FlattenFuncs(KStruct s)
-        => FlattenChilds(s).Fold(Seq<KFunc>(), (s, next) => s.Append(next.Funcs));
-
         Seq<KStruct> childs = FlattenChilds(s);
-        Seq<KFunc> funcs = FlattenFuncs(s);
-        return funcs.Contains(func)
-            ? System.Array.IndexOf(funcs.ToArray(), func)
-            : None;
+        Seq<int> offsets = Offsets(s);
+        Seq<(KStruct parent, int offset)> childsAndOffsets = childs.Zip(offsets);
+        Option<KStruct> parent = childs.Find(x => x.Funcs.Contains(func));
+        return childsAndOffsets
+            .Find(t => t.parent == parent)
+            .Map(t => t.offset + System.Array.IndexOf(t.parent.Funcs.ToArray(), func));
     }
+
+    //static Seq<(KStruct, int)> Offsets(this KStruct s)
+    //{
+    //    static Seq<(KStruct, int)> go(KStruct start, int offset, Seq<(KStruct, int)> acc)
+    //    {
+    //        int numberOfFuncs = start.Funcs.Length;
+    //        int nextOffset = offset + numberOfFuncs;
+    //        return start.Childs.Fold(acc, (acc, next), )
+    //        //start.Childs.Map(x => (x, go(x)))
+    //        //return start.Childs.Fold(acc, (acc, next) =>  )
+    //        //return start.Childs.Fold(acc.Append(start.Childs), (acc, next) => go(next, acc));
+    //    }
+    //    return go(s, 0, Seq<(KStruct, int)>().Add((s, 0)));
+    //}
+
+    //public static Option<int> FindOffsetBad(this KStruct s, KFunc func)
+    //{
+    //    static Seq<KFunc> FlattenFuncs(KStruct s)
+    //    => FlattenChilds(s).Fold(Seq<KFunc>(), (s, next) => s.Append(next.Funcs));
+
+    //    Seq<KStruct> childs = FlattenChilds(s);
+    //    Seq<KFunc> funcs = FlattenFuncs(s);
+    //    return funcs.Contains(func)
+    //        ? System.Array.IndexOf(funcs.ToArray(), func)
+    //        : None;
+    //}
 
     public static Option<KStruct> FindChild(this KStruct s, string name)
     => s.FlattenChilds().Find(x => name == x.Name);
+
+    public static Option<KStruct> FindChild2(this KStruct s, string name)
+    {
+        Option<KStruct> go(KStruct parent, Seq<string> child)
+        {
+            return child.IsEmpty
+            ? parent
+            : s.Childs.Find(x => child.HeadOrNone() == x.Name)
+                .Bind(x => go(x, child.Tail));
+        }
+        return go(s, name.Split('.').ToSeq());
+    }
 }
 
 public static class Parser
@@ -93,12 +141,12 @@ public static class Parser
         Seq<string> paramNames = match.Groups[6].Captures.ToSeq().Map(x => x.ToString());
         return from name in funcName
                from retValType in retValTypes
-               select new KFunc(name,
+               select new KFunc(name, name,
                    paramTypes.Zip(paramNames).Map(t => new KParam(t.Left, t.Right)),
                    new KParam(retValType, "RetVal"));
     }
 
-    public static Seq<KStruct> ParseStructs(string text)
+    static Seq<KStruct> ParseStructsWithShortNames(string text)
     {
         static Match ParseFull(string text)
         {
@@ -124,7 +172,7 @@ public static class Parser
             Seq<KFunc> fs = match.Groups[3].Captures.ToSeq().Map(x => x.ToString())
                 .Bind(x => ParseSignature(x).ToSeq());
             return names.Zip(inner)
-                .Map(t => new KStruct(t.Left, fs, ParseStructs(t.Right)));
+                .Map(t => new KStruct(t.Left, t.Left, fs, ParseStructs(t.Right)));
         }
 
         static Seq<KStruct> goSequence(Match match)
@@ -151,6 +199,23 @@ public static class Parser
 
         return isSequence ? goSequence(sequence) : go(full);
     }
+
+
+    public static KStruct FixFullNames(KStruct s)
+    {
+        static KFunc PrefixFunc(String prefix, KFunc f)
+        => new KFunc(prefix + "." + f.Name, f.Name, f.Params, f.RetVal);
+
+        static KStruct go(String prefix, KStruct s)
+        {
+            string next = prefix + (string.IsNullOrEmpty(prefix) ? "" : ".") + s.Name;
+            return new KStruct(next, s.Name, s.Funcs.Map(f => PrefixFunc(next, f)), s.Childs.Map(c => go(next, c)));
+        }
+        return go("", s);
+    }
+
+    public static Seq<KStruct> ParseStructs(string text)
+    => ParseStructsWithShortNames(text).Map(FixFullNames);
 
     public static Option<KHeader> ParseHeader(string header)
     {
