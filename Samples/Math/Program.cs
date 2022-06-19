@@ -9,10 +9,16 @@ static string Hex(IntPtr ptr)
 static void PrintHexed(IntPtr ptr)
 => WriteLine(Hex(ptr));
 
-static T GetFuncAt<T>(IntPtr symbols, int offset)
+static T GetFuncAtOffset<T>(IntPtr symbols, int offset)
 {
     IntPtr addr = Marshal.ReadIntPtr(symbols + IntPtr.Size * offset);
     return Marshal.GetDelegateForFunctionPointer<T>(addr);
+}
+
+static T GetFuncFromDecl<T>(IntPtr symbols, KStruct symbolsDecl, KFunc f)
+{
+    int offset = (int)symbolsDecl.FindOffset(f);
+    return GetFuncAtOffset<T>(symbols, offset);
 }
 
 string assemblyLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
@@ -49,12 +55,8 @@ IntPtr symbols = symbolsFunc();
 int step = IntPtr.Size;
 
 T GetFunc<T>(KFunc f)
-{
-    int offset = (int)findOffset(f);
-    return GetFuncAt<T>(symbols, offset);
-}
+=> GetFuncFromDecl<T>(symbols, symbolsDecl, f);
 
-// FindOffset has a bug. This is the minusType.
 Void_IntPtr plusType = GetFunc<Void_IntPtr>(plusTypeDecl);
 PlusCtor plusCtor = GetFunc<PlusCtor>(plusCtorDecl);
 MinusCtor minusCtor = GetFunc<MinusCtor>(minusCtorDecl);
