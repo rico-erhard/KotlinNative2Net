@@ -36,7 +36,7 @@ f => symbolsDecl.FindOffset(f);
 
 KFunc plusTypeDecl = (KFunc)plusDecl.FindFunc("_type");
 KFunc plusCtorDecl = (KFunc)plusDecl.FindFunc("Plus");
-KFunc addDecl = (KFunc)plusDecl.FindFunc("add");
+KFunc addDecl = (KFunc)symbolsDecl.FindFunc("arithmetic.Plus.add");
 KFunc minusCtorDecl = (KFunc)minusDecl.FindFunc("Minus");
 KFunc minusTypeDecl = (KFunc)minusDecl.FindFunc("_type");
 KFunc subtractMethodDecl = (KFunc)minusDecl.FindFunc("subtract");
@@ -54,11 +54,14 @@ int step = IntPtr.Size;
 T GetFunc<T>(KFunc f)
 => (T)GetFuncFromDecl<T>(symbols, symbolsDecl, f);
 
+T GetFuncFromName<T>(string fullName)
+=> (T)symbolsDecl.FindFunc(fullName).Map(f => GetFunc<T>(f));
+
 Void_IntPtr plusType = GetFunc<Void_IntPtr>(plusTypeDecl);
 Void_IntPtr minusType = GetFunc<Void_IntPtr>(minusTypeDecl);
 PlusCtor plusCtor = GetFunc<PlusCtor>(plusCtorDecl);
 MinusCtor minusCtor = GetFunc<MinusCtor>(minusCtorDecl);
-Ptr_Int addMethod = GetFunc<Ptr_Int>(addDecl);
+Ptr_Int addMethod = GetFuncFromName<Ptr_Int>("arithmetic.Plus.add");
 Ptr_Int subtractMethod = GetFunc<Ptr_Int>(subtractMethodDecl);
 
 Void_IntPtr createNullableUnit = GetFunc<Void_IntPtr>(createNullableUnitDecl);
