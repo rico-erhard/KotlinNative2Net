@@ -72,20 +72,26 @@ public static class KStructEx
     //        : None;
     //}
 
-    public static Option<KStruct> FindChild(this KStruct s, string name)
-    => s.FlattenChilds().Find(x => name == x.Name);
+    //public static Option<KStruct> FindChild(this KStruct s, string name)
+    //=> s.FlattenChilds().Find(x => name == x.Name);
 
-    public static Option<KStruct> FindChild2(this KStruct s, string name)
-    {
-        Option<KStruct> go(KStruct parent, Seq<string> child)
-        {
-            return child.IsEmpty
-            ? parent
-            : s.Childs.Find(x => child.HeadOrNone() == x.Name)
-                .Bind(x => go(x, child.Tail));
-        }
-        return go(s, name.Split('.').ToSeq());
-    }
+    public static Option<KStruct> FindChild(this KStruct s, string name)
+    => s.FlattenChilds().Find(x => x.FullName.EndsWith(name));
+
+    public static Option<KFunc> FindFunc(this KStruct s, string name)
+    => s.FlattenChilds().Bind(x => x.Funcs).Find(x => x.FullName.EndsWith(name));
+
+    //public static Option<KStruct> FindChild2(this KStruct s, string name)
+    //{
+    //    Option<KStruct> go(KStruct parent, Seq<string> child)
+    //    {
+    //        return child.IsEmpty
+    //        ? parent
+    //        : s.Childs.Find(x => child.HeadOrNone() == x.Name)
+    //            .Bind(x => go(x, child.Tail));
+    //    }
+    //    return go(s, name.Split('.').ToSeq());
+    //}
 }
 
 public static class Parser

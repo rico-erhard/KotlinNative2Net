@@ -27,23 +27,22 @@ string mathHeader = File.ReadAllText(apiPath);
 
 KHeader header = (KHeader)Parser.ParseHeader(mathHeader);
 KStruct symbolsDecl = (KStruct)header.Childs.Find(x => x.Name == header.SymbolsType);
-KStruct minusDecl = (KStruct)symbolsDecl.FindChild("Minus");
+KStruct minusDecl = (KStruct)symbolsDecl.FindChild("root.arithmetic.Minus");
 KStruct plusDecl = (KStruct)symbolsDecl.FindChild("Plus");
 
 
 Func<KFunc, Option<int>> findOffset =
 f => symbolsDecl.FindOffset(f);
 
-KFunc plusTypeDecl = (KFunc)plusDecl.Funcs.Find(x => "_type" == x.Name);
-KFunc plusCtorDecl = (KFunc)plusDecl.Funcs.Find(x => "Plus" == x.Name);
-KFunc addDecl = (KFunc)plusDecl.Funcs.Find(x => "add" == x.Name);
-KFunc minusCtorDecl = (KFunc)minusDecl.Funcs.Find(x => "Minus" == x.Name);
-KFunc minusTypeDecl = (KFunc)minusDecl.Funcs.Find(x => "_type" == x.Name);
-KFunc subtractMethodDecl = (KFunc)minusDecl.Funcs.Find(x => "subtract" == x.Name);
-KFunc isInstanceDecl = (KFunc)symbolsDecl.Funcs.Find(x => "IsInstance" == x.Name);
-KFunc createNullableUnitDecl = (KFunc)symbolsDecl.Funcs.Find(x => "createNullableUnit" == x.Name);
-KFunc disposeStablePointerDecl = (KFunc)symbolsDecl.Funcs.Find(x => "DisposeStablePointer" == x.Name);
-
+KFunc plusTypeDecl = (KFunc)plusDecl.FindFunc("_type");
+KFunc plusCtorDecl = (KFunc)plusDecl.FindFunc("Plus");
+KFunc addDecl = (KFunc)plusDecl.FindFunc("add");
+KFunc minusCtorDecl = (KFunc)minusDecl.FindFunc("Minus");
+KFunc minusTypeDecl = (KFunc)minusDecl.FindFunc("_type");
+KFunc subtractMethodDecl = (KFunc)minusDecl.FindFunc("subtract");
+KFunc isInstanceDecl = (KFunc)symbolsDecl.FindFunc("IsInstance");
+KFunc createNullableUnitDecl = (KFunc)symbolsDecl.FindFunc("createNullableUnit");
+KFunc disposeStablePointerDecl = (KFunc)symbolsDecl.FindFunc("DisposeStablePointer");
 
 IntPtr mathLib = NativeLibrary.Load(sharedLibPath);
 IntPtr symbolsFuncAddr = NativeLibrary.GetExport(mathLib, header.SymbolsFunc);
@@ -56,6 +55,7 @@ T GetFunc<T>(KFunc f)
 => (T)GetFuncFromDecl<T>(symbols, symbolsDecl, f);
 
 Void_IntPtr plusType = GetFunc<Void_IntPtr>(plusTypeDecl);
+Void_IntPtr minusType = GetFunc<Void_IntPtr>(minusTypeDecl);
 PlusCtor plusCtor = GetFunc<PlusCtor>(plusCtorDecl);
 MinusCtor minusCtor = GetFunc<MinusCtor>(minusCtorDecl);
 Ptr_Int addMethod = GetFunc<Ptr_Int>(addDecl);
@@ -76,6 +76,7 @@ PrintHexed(symbols);
 IntPtr plus5 = plusCtor(2, 3);
 IntPtr plus7 = plusCtor(3, 4);
 IntPtr plusTypeInst = plusType();
+IntPtr minusTypeInst = minusType();
 IntPtr plusTypeInst2 = plusType();
 IntPtr minus = minusCtor(2, 3);
 IntPtr unit = createNullableUnit();
@@ -91,7 +92,11 @@ PrintHexed(plus5);
 PrintHexed(plus7);
 
 WriteLine($"plus is plusType = {IsInstance(plus5, plusTypeInst)}");
+WriteLine($"plus is minusType = {IsInstance(plus5, minusTypeInst)}");
+
+WriteLine($"minus is minusType = {IsInstance(minus, minusTypeInst)}");
 WriteLine($"minus is plusType = {IsInstance(minus, plusTypeInst)}");
+
 WriteLine($"unit is plusType = {IsInstance(unit, plusTypeInst)}");
 
 WriteLine($"2 + 3 = {addMethod(plus5)}");
