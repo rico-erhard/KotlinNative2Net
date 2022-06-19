@@ -51,6 +51,7 @@ public static class KStructEx
 
     public static Option<KFunc> FindFunc(this KStruct s, string name)
     => s.FlattenChilds().Bind(x => x.Funcs).Find(x => x.FullName.EndsWith(name));
+}
 
 public static class Parser
 {

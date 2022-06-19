@@ -73,14 +73,17 @@ bool IsInstance(IntPtr kObj, IntPtr type)
 
 PrintHexed(symbols);
 
-IntPtr plus5 = plusCtor(2, 3);
-IntPtr plus7 = plusCtor(3, 4);
-IntPtr plusTypeInst = plusType();
-IntPtr minusTypeInst = minusType();
-IntPtr plusTypeInst2 = plusType();
-IntPtr minus = minusCtor(2, 3);
-IntPtr unit = createNullableUnit();
-IntPtr unit2 = createNullableUnit();
+KObj NewKObj(IntPtr handle)
+=> new KObj(handle, Dispose);
+
+using KObj plus5 = NewKObj(plusCtor(2, 3));
+using KObj plus7 = NewKObj(plusCtor(3, 4));
+using KObj plusTypeInst = NewKObj(plusType());
+using KObj minusTypeInst = NewKObj(minusType());
+using KObj plusTypeInst2 = NewKObj(plusType());
+using KObj minus = NewKObj(minusCtor(2, 3));
+using KObj unit = NewKObj(createNullableUnit());
+using KObj unit2 = NewKObj(createNullableUnit());
 
 PrintHexed(unit);
 PrintHexed(unit2);
@@ -101,14 +104,6 @@ WriteLine($"unit is plusType = {IsInstance(unit, plusTypeInst)}");
 
 WriteLine($"2 + 3 = {addMethod(plus5)}");
 WriteLine($"2 - 3 = {subtractMethod(minus)}");
-
-Dispose(plus5);
-Dispose(plus7);
-Dispose(plusTypeInst);
-Dispose(plusTypeInst2);
-Dispose(minus);
-Dispose(unit);
-Dispose(unit2);
 
 
 delegate IntPtr SymbolsFunc();
