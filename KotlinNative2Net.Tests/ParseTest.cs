@@ -381,6 +381,12 @@ math_kref_kotlin_Unit (*createNullableUnit)(void);
 
         KFunc add = (KFunc)plus.Funcs.Find(x => "add" == x.Name);
         Equal(17, (int)symbols.FindOffset(add));
+
+        KFunc plusType = (KFunc)plus.Funcs.Find(x => "_type" == x.Name);
+        Equal(15, (int)symbols.FindOffset(plusType));
+
+        KFunc minusType = (KFunc)minus.Funcs.Find(x => "_type" == x.Name);
+        Equal(12, (int)symbols.FindOffset(minusType));
     }
 
     [Fact]
