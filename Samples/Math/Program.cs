@@ -15,11 +15,9 @@ static T GetFuncAtOffset<T>(IntPtr symbols, int offset)
     return Marshal.GetDelegateForFunctionPointer<T>(addr);
 }
 
-static T GetFuncFromDecl<T>(IntPtr symbols, KStruct symbolsDecl, KFunc f)
-{
-    int offset = (int)symbolsDecl.FindOffset(f);
-    return GetFuncAtOffset<T>(symbols, offset);
-}
+static Option<T> GetFuncFromDecl<T>(IntPtr symbols, KStruct symbolsDecl, KFunc f)
+=> symbolsDecl.FindOffset(f)
+    .Map(x => GetFuncAtOffset<T>(symbols, x));
 
 string assemblyLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
 string apiPath = Path.GetDirectoryName(assemblyLocation) + Path.DirectorySeparatorChar + "math_api.h";
@@ -55,7 +53,7 @@ IntPtr symbols = symbolsFunc();
 int step = IntPtr.Size;
 
 T GetFunc<T>(KFunc f)
-=> GetFuncFromDecl<T>(symbols, symbolsDecl, f);
+=> (T)GetFuncFromDecl<T>(symbols, symbolsDecl, f);
 
 Void_IntPtr plusType = GetFunc<Void_IntPtr>(plusTypeDecl);
 PlusCtor plusCtor = GetFunc<PlusCtor>(plusCtorDecl);
