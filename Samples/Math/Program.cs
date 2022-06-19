@@ -9,7 +9,7 @@ static string Hex(IntPtr ptr)
 static void PrintHexed(IntPtr ptr)
 => WriteLine(Hex(ptr));
 
-static T GetFunc<T>(IntPtr symbols, int offset)
+static T GetFuncAt<T>(IntPtr symbols, int offset)
 {
     IntPtr addr = Marshal.ReadIntPtr(symbols + IntPtr.Size * offset);
     return Marshal.GetDelegateForFunctionPointer<T>(addr);
@@ -31,31 +31,15 @@ Func<KFunc, Option<int>> findOffset =
 f => symbolsDecl.FindOffset(f);
 
 KFunc plusTypeDecl = (KFunc)plusDecl.Funcs.Find(x => "_type" == x.Name);
-int plusTypeOffset = (int)findOffset(plusTypeDecl);
-
 KFunc plusCtorDecl = (KFunc)plusDecl.Funcs.Find(x => "Plus" == x.Name);
-int plusCtorOffset = (int)findOffset(plusCtorDecl);
-
 KFunc addDecl = (KFunc)plusDecl.Funcs.Find(x => "add" == x.Name);
-int addOffset = (int)findOffset(addDecl);
-
 KFunc minusCtorDecl = (KFunc)minusDecl.Funcs.Find(x => "Minus" == x.Name);
-int minusCtorOffset = (int)findOffset(minusCtorDecl);
-
 KFunc minusTypeDecl = (KFunc)minusDecl.Funcs.Find(x => "_type" == x.Name);
-int minusTypeOffset = (int)findOffset(minusTypeDecl);
-
 KFunc subtractMethodDecl = (KFunc)minusDecl.Funcs.Find(x => "subtract" == x.Name);
-int substractOffset = (int)findOffset(subtractMethodDecl);
-
 KFunc isInstanceDecl = (KFunc)symbolsDecl.Funcs.Find(x => "IsInstance" == x.Name);
-int isInstanceOffset = (int)findOffset(isInstanceDecl);
-
 KFunc createNullableUnitDecl = (KFunc)symbolsDecl.Funcs.Find(x => "createNullableUnit" == x.Name);
-int createNullableUnitOffset = (int)findOffset(createNullableUnitDecl);
-
 KFunc disposeStablePointerDecl = (KFunc)symbolsDecl.Funcs.Find(x => "DisposeStablePointer" == x.Name);
-int disposeStablePointerOffset = (int)findOffset(createNullableUnitDecl);
+
 
 IntPtr mathLib = NativeLibrary.Load(sharedLibPath);
 IntPtr symbolsFuncAddr = NativeLibrary.GetExport(mathLib, header.SymbolsFunc);
@@ -64,22 +48,25 @@ IntPtr symbols = symbolsFunc();
 
 int step = IntPtr.Size;
 
-// FindOffset has a bug. This is the minusType.
-Void_IntPtr plusType = GetFunc<Void_IntPtr>(symbols, plusTypeOffset);
-PlusCtor plusCtor = GetFunc<PlusCtor>(symbols, plusCtorOffset);
-MinusCtor minusCtor = GetFunc<MinusCtor>(symbols, minusCtorOffset);
-Ptr_Int addMethod = GetFunc<Ptr_Int>(symbols, addOffset);
-Ptr_Int subtractMethod = GetFunc<Ptr_Int>(symbols, substractOffset);
+T GetFunc<T>(KFunc f)
+{
+    int offset = (int)findOffset(f);
+    return GetFuncAt<T>(symbols, offset);
+}
 
-Void_IntPtr createNullableUnit = GetFunc<Void_IntPtr>(symbols, createNullableUnitOffset);
-PtrPtr_Int isInstance = GetFunc<PtrPtr_Int>(symbols, isInstanceOffset);
-Ptr_Void disposeStablePointer = GetFunc<Ptr_Void>(symbols, disposeStablePointerOffset);
+// FindOffset has a bug. This is the minusType.
+Void_IntPtr plusType = GetFunc<Void_IntPtr>(plusTypeDecl);
+PlusCtor plusCtor = GetFunc<PlusCtor>(plusCtorDecl);
+MinusCtor minusCtor = GetFunc<MinusCtor>(minusCtorDecl);
+Ptr_Int addMethod = GetFunc<Ptr_Int>(addDecl);
+Ptr_Int subtractMethod = GetFunc<Ptr_Int>(subtractMethodDecl);
+
+Void_IntPtr createNullableUnit = GetFunc<Void_IntPtr>(createNullableUnitDecl);
+PtrPtr_Int isInstance = GetFunc<PtrPtr_Int>(isInstanceDecl);
+Ptr_Void disposeStablePointer = GetFunc<Ptr_Void>(disposeStablePointerDecl);
 
 void Dispose(IntPtr kObj)
-{
-    IntPtr pinnedAddr = Marshal.ReadIntPtr(kObj);
-    disposeStablePointer(pinnedAddr);
-}
+=> disposeStablePointer(kObj);
 
 bool IsInstance(IntPtr kObj, IntPtr type)
 => 0 != isInstance(kObj, type);
