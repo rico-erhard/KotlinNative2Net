@@ -79,10 +79,7 @@ void Dispose(IntPtr kObj)
 }
 
 bool IsInstance(IntPtr kObj, IntPtr type)
-{
-    //IntPtr pinnedAddr = Marshal.ReadIntPtr(kObj);
-    return 0 != isInstance(kObj, type);
-}
+=> 0 != isInstance(kObj, type);
 
 
 PrintHexed(symbols);
