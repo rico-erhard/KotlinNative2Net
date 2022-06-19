@@ -46,53 +46,11 @@ public static class KStructEx
             .Map(t => t.offset + System.Array.IndexOf(t.parent.Funcs.ToArray(), func));
     }
 
-    //static Seq<(KStruct, int)> Offsets(this KStruct s)
-    //{
-    //    static Seq<(KStruct, int)> go(KStruct start, int offset, Seq<(KStruct, int)> acc)
-    //    {
-    //        int numberOfFuncs = start.Funcs.Length;
-    //        int nextOffset = offset + numberOfFuncs;
-    //        return start.Childs.Fold(acc, (acc, next), )
-    //        //start.Childs.Map(x => (x, go(x)))
-    //        //return start.Childs.Fold(acc, (acc, next) =>  )
-    //        //return start.Childs.Fold(acc.Append(start.Childs), (acc, next) => go(next, acc));
-    //    }
-    //    return go(s, 0, Seq<(KStruct, int)>().Add((s, 0)));
-    //}
-
-    //public static Option<int> FindOffsetBad(this KStruct s, KFunc func)
-    //{
-    //    static Seq<KFunc> FlattenFuncs(KStruct s)
-    //    => FlattenChilds(s).Fold(Seq<KFunc>(), (s, next) => s.Append(next.Funcs));
-
-    //    Seq<KStruct> childs = FlattenChilds(s);
-    //    Seq<KFunc> funcs = FlattenFuncs(s);
-    //    return funcs.Contains(func)
-    //        ? System.Array.IndexOf(funcs.ToArray(), func)
-    //        : None;
-    //}
-
-    //public static Option<KStruct> FindChild(this KStruct s, string name)
-    //=> s.FlattenChilds().Find(x => name == x.Name);
-
     public static Option<KStruct> FindChild(this KStruct s, string name)
     => s.FlattenChilds().Find(x => x.FullName.EndsWith(name));
 
     public static Option<KFunc> FindFunc(this KStruct s, string name)
     => s.FlattenChilds().Bind(x => x.Funcs).Find(x => x.FullName.EndsWith(name));
-
-    //public static Option<KStruct> FindChild2(this KStruct s, string name)
-    //{
-    //    Option<KStruct> go(KStruct parent, Seq<string> child)
-    //    {
-    //        return child.IsEmpty
-    //        ? parent
-    //        : s.Childs.Find(x => child.HeadOrNone() == x.Name)
-    //            .Bind(x => go(x, child.Tail));
-    //    }
-    //    return go(s, name.Split('.').ToSeq());
-    //}
-}
 
 public static class Parser
 {
