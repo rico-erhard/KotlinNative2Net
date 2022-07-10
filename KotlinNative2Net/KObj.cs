@@ -22,7 +22,7 @@ class KObj : DynamicObject
     public override bool TryInvokeMember(System.Dynamic.InvokeMemberBinder binder, object?[]? args, out object? result)
     {
         static bool IsPtrInt(KFunc f)
-        => 1 == f.Params.Count && f.RetVal.Type == "math_KInt";
+        => 1 == f.Params.Count && f.RetVal.Type.EndsWith("KInt");
 
         static bool IsPtrVoid(KFunc f)
         => 1 == f.Params.Count && "void" == f.RetVal.Type;
@@ -62,5 +62,4 @@ class KObj : DynamicObject
         result = tmpResult;
         return success;
     }
-
 }

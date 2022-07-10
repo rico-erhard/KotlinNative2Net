@@ -91,7 +91,7 @@ public class KLib : DynamicObject, IDisposable
 
             if (args is not null && args.Length == func.Params.Length)
             {
-                if (func.Params.All(x => x.Type == "math_KInt") && func.RetVal.Type.StartsWith("math_kref"))
+                if (func.Params.All(x => x.Type.EndsWith("KInt")) && func.RetVal.Type.Contains("_kref_"))
                 {
                     GetFunc<IntPtr_IntInt>(func).Do(f =>
                     {
