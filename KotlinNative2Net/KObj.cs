@@ -1,38 +1,46 @@
+using System.Dynamic;
+using LanguageExt;
+
 namespace KotlinNative2Net;
 
-public class KObj : IDisposable
+class KObj : DynamicObject
 {
 
     readonly IntPtr handle;
 
-    readonly Action<IntPtr> dispose;
+    readonly KStruct kStruct;
 
-    bool disposed = false;
+    GetFunc getFunc;
 
-    public KObj(IntPtr handle, Action<IntPtr> dispose)
+    internal KObj(IntPtr handle, KStruct kStruct, GetFunc getFunc)
     {
         this.handle = handle;
-        this.dispose = dispose;
+        this.kStruct = kStruct;
+        this.getFunc = getFunc;
     }
 
-    // Public implementation of Dispose pattern callable by consumers.
-    public void Dispose()
+    public override bool TryInvokeMember(System.Dynamic.InvokeMemberBinder binder, object?[]? args, out object? result)
     {
-        Dispose(true);
-        GC.SuppressFinalize(this);
-    }
+        static bool IsPtrInt(KFunc f)
+        => 1 == f.Params.Count && f.RetVal.Type == "math_KInt";
 
-    protected virtual void Dispose(bool disposing)
-    {
-        if (disposed)
-            return;
+        bool success = false;
+        object? localResult = null;
 
-        if (disposing)
+        Option<KFunc> func = kStruct.FindFunc(binder.Name);
+        func.Do(f =>
         {
-            dispose(handle);
-        }
-        disposed = true;
-    }
+            if (IsPtrInt(f))
+            {
+                getFunc.Get<Ptr_Int>(f).Do(d =>
+                {
+                    localResult = d(handle);
+                    success = true;
+                });
+            }
+        });
 
-    public static implicit operator IntPtr(KObj x) => x.handle;
+        result = localResult;
+        return success;
+    }
 }

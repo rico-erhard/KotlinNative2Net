@@ -1,3 +1,4 @@
+using System.Dynamic;
 using System.Runtime.InteropServices;
 using LanguageExt;
 using static LanguageExt.Prelude;
@@ -6,7 +7,29 @@ namespace KotlinNative2Net;
 
 delegate IntPtr Void_Ptr();
 
-public class KLib : IDisposable
+delegate int Ptr_Int(IntPtr inst);
+
+delegate IntPtr IntPtr_IntInt(int a, int b);
+
+internal interface GetFunc
+{
+    Option<T> Get<T>(KFunc f);
+}
+
+class GetFuncImpl : GetFunc
+{
+    KLib klib;
+
+    internal GetFuncImpl(KLib klib)
+    {
+        this.klib = klib;
+    }
+
+    public Option<T> Get<T>(KFunc f)
+    => klib.GetFunc<T>(f);
+}
+
+public class KLib : DynamicObject
 {
 
     readonly IntPtr libHandle;
@@ -17,14 +40,17 @@ public class KLib : IDisposable
 
     public readonly KStruct Symbols;
 
+    public readonly KStruct Thiz;
+
     bool disposed = false;
 
-    public KLib(IntPtr libHandle, IntPtr symbolsHandle, KHeader header, KStruct symbols)
+    public KLib(IntPtr libHandle, IntPtr symbolsHandle, KHeader header, KStruct symbols, KStruct thiz)
     {
         this.libHandle = libHandle;
         this.symbolsHandle = symbolsHandle;
         Header = header;
         Symbols = symbols;
+        Thiz = thiz;
     }
 
     public static Option<KLib> Of(string apiPath, string sharedLibPath)
@@ -42,7 +68,7 @@ public class KLib : IDisposable
         IntPtr symbolsHandle = symbolsFunc();
         KStruct symbols = (KStruct)header.Childs.Find(x => x.Name == header.SymbolsType);
 
-        return new KLib(libHandle, symbolsHandle, header, symbols);
+        return new KLib(libHandle, symbolsHandle, header, symbols, symbols);
     }).ToOption();
 
     static Option<T> GetFuncAtOffset<T>(IntPtr symbols, int offset)
@@ -79,5 +105,39 @@ public class KLib : IDisposable
             NativeLibrary.Free(libHandle);
         }
         disposed = true;
+    }
+
+    public override bool TryInvokeMember(System.Dynamic.InvokeMemberBinder binder, object?[]? args, out object? result)
+    {
+        object? go(KFunc func)
+        {
+            object? tmpResult = null;
+
+            if (args is not null && args.Length == func.Params.Length)
+            {
+                if (func.Params.All(x => x.Type == "math_KInt") && func.RetVal.Type.StartsWith("math_kref"))
+                {
+                    GetFunc<IntPtr_IntInt>(func).Do(f =>
+                    {
+                        IntPtr hi = f((int)args[0], (int)args[1]);
+                        tmpResult = new KObj(hi, Thiz, new GetFuncImpl(this));
+                    });
+                }
+
+            }
+            return tmpResult;
+        }
+
+        Option<KFunc> func = Symbols.FindFunc(binder.Name);
+        result = func.Map(go).IfNoneUnsafe(() => null);
+        return result is not null;
+    }
+
+    public override bool TryGetMember(System.Dynamic.GetMemberBinder binder, out object? result)
+    {
+        Option<KLib> tmpResult = Symbols.FindChild(binder.Name)
+            .Map(c => new KLib(libHandle, symbolsHandle, Header, Symbols, c));
+        result = tmpResult.IfNoneUnsafe(() => null);
+        return null != result;
     }
 }
