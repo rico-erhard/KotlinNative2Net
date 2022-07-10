@@ -1,5 +1,7 @@
-﻿using KotlinNative2Net;
+﻿using System.Dynamic;
+using KotlinNative2Net;
 using LanguageExt;
+using static LanguageExt.Prelude;
 using static System.Console;
 
 static string Hex(IntPtr ptr)
@@ -12,7 +14,6 @@ string assemblyLocation = System.Reflection.Assembly.GetExecutingAssembly().Loca
 string apiPath = Path.GetDirectoryName(assemblyLocation) + Path.DirectorySeparatorChar + "math_api.h";
 string sharedLibPath = Path.GetDirectoryName(assemblyLocation) + Path.DirectorySeparatorChar + "math.dll";
 
-
 using KLib kLib = (KLib)KLib.Of(apiPath, sharedLibPath);
 
 string mathHeader = File.ReadAllText(apiPath);
@@ -22,31 +23,19 @@ KStruct symbolsDecl = kLib.Symbols;
 KStruct minusDecl = (KStruct)symbolsDecl.FindChild("root.arithmetic.Minus");
 KStruct plusDecl = (KStruct)symbolsDecl.FindChild("Plus");
 
-//Func<KFunc, Option<int>> findOffset =
-//f => symbolsDecl.FindOffset(f);
-
 KFunc plusTypeDecl = (KFunc)plusDecl.FindFunc("_type");
 KFunc plusCtorDecl = (KFunc)plusDecl.FindFunc("Plus");
-KFunc addDecl = (KFunc)symbolsDecl.FindFunc("arithmetic.Plus.add");
-KFunc minusCtorDecl = (KFunc)minusDecl.FindFunc("Minus");
 KFunc minusTypeDecl = (KFunc)minusDecl.FindFunc("_type");
-KFunc subtractMethodDecl = (KFunc)minusDecl.FindFunc("subtract");
 KFunc isInstanceDecl = (KFunc)symbolsDecl.FindFunc("IsInstance");
 KFunc createNullableUnitDecl = (KFunc)symbolsDecl.FindFunc("createNullableUnit");
 KFunc disposeStablePointerDecl = (KFunc)symbolsDecl.FindFunc("DisposeStablePointer");
 
-//IntPtr mathLib = NativeLibrary.Load(sharedLibPath);
-//IntPtr symbolsFuncAddr = NativeLibrary.GetExport(mathLib, header.SymbolsFunc);
-//SymbolsFunc symbolsFunc = Marshal.GetDelegateForFunctionPointer<SymbolsFunc>(symbolsFuncAddr);
-//IntPtr symbols = symbolsFunc();
-//PrintHexed(symbols);
-
 Void_IntPtr plusType = (Void_IntPtr)kLib.GetFunc<Void_IntPtr>(plusTypeDecl);
 Void_IntPtr minusType = (Void_IntPtr)kLib.GetFunc<Void_IntPtr>(minusTypeDecl);
 PlusCtor plusCtor = (PlusCtor)kLib.GetFunc<PlusCtor>(plusCtorDecl);
-MinusCtor minusCtor = (MinusCtor)kLib.GetFunc<MinusCtor>(minusCtorDecl);
+MinusCtor minusCtor = (MinusCtor)kLib.GetFunc<MinusCtor>("arithmetic.Minus.Minus");
 Ptr_Int addMethod = (Ptr_Int)kLib.GetFunc<Ptr_Int>("arithmetic.Plus.add");
-Ptr_Int subtractMethod = (Ptr_Int)kLib.GetFunc<Ptr_Int>(subtractMethodDecl);
+Ptr_Int subtractMethod = (Ptr_Int)kLib.GetFunc<Ptr_Int>("arithmetic.Minus.subtract");
 
 Void_IntPtr createNullableUnit = (Void_IntPtr)kLib.GetFunc<Void_IntPtr>(createNullableUnitDecl);
 PtrPtr_Int isInstance = (PtrPtr_Int)kLib.GetFunc<PtrPtr_Int>(isInstanceDecl);
@@ -89,7 +78,54 @@ WriteLine($"minus is plusType = {IsInstance(minus, plusTypeInst)}");
 WriteLine($"unit is plusType = {IsInstance(unit, plusTypeInst)}");
 
 WriteLine($"2 + 3 = {addMethod(plus5)}");
+WriteLine($"3 + 4 = {addMethod(plus7)}");
 WriteLine($"2 - 3 = {subtractMethod(minus)}");
+
+dynamic dynPlus7 = new DynKObj(plus7, plusDecl, kLib);
+int result = dynPlus7.add<int>();
+WriteLine($"Result = {result}");
+
+
+class DynKObj : DynamicObject
+{
+    readonly KObj kObj;
+
+    readonly KStruct kStruct;
+    readonly KLib kLib;
+
+    public DynKObj(KObj kObj, KStruct kStruct, KLib kLib)
+    {
+        this.kObj = kObj;
+        this.kStruct = kStruct;
+        this.kLib = kLib;
+    }
+
+    public override bool TryInvokeMember(System.Dynamic.InvokeMemberBinder binder, object?[]? args, out object? result)
+    {
+        static bool IsPtrInt(KFunc f)
+        => 1 == f.Params.Count && f.RetVal.Type == "math_KInt";
+
+        bool success = false;
+        object? localResult = null;
+
+        Option<KFunc> func = kStruct.FindFunc(binder.Name);
+        func.Do(f =>
+        {
+            if (IsPtrInt(f))
+            {
+                kLib.GetFunc<Ptr_Int>(f).Do(d =>
+                {
+                    localResult = d(kObj);
+                    success = true;
+                });
+            }
+        });
+
+        result = localResult;
+        return success;
+    }
+
+}
 
 
 delegate IntPtr SymbolsFunc();
@@ -108,3 +144,4 @@ delegate int PtrPtr_Byte(IntPtr inst, IntPtr type);
 
 delegate int Ptr_Int(IntPtr inst);
 
+// https://docs.microsoft.com/en-us/dotnet/api/system.dynamic.dynamicobject?view=net-6.0
