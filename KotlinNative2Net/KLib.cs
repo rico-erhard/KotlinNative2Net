@@ -5,31 +5,7 @@ using static LanguageExt.Prelude;
 
 namespace KotlinNative2Net;
 
-delegate IntPtr Void_Ptr();
-
-delegate int Ptr_Int(IntPtr inst);
-
-delegate IntPtr IntPtr_IntInt(int a, int b);
-
-internal interface GetFunc
-{
-    Option<T> Get<T>(KFunc f);
-}
-
-class GetFuncImpl : GetFunc
-{
-    KLib klib;
-
-    internal GetFuncImpl(KLib klib)
-    {
-        this.klib = klib;
-    }
-
-    public Option<T> Get<T>(KFunc f)
-    => klib.GetFunc<T>(f);
-}
-
-public class KLib : DynamicObject
+public class KLib : DynamicObject, IDisposable
 {
 
     readonly IntPtr libHandle;
@@ -120,7 +96,7 @@ public class KLib : DynamicObject
                     GetFunc<IntPtr_IntInt>(func).Do(f =>
                     {
                         IntPtr hi = f((int)args[0], (int)args[1]);
-                        tmpResult = new KObj(hi, Thiz, new GetFuncImpl(this));
+                        tmpResult = new KObj(hi, Thiz, this);
                     });
                 }
 
