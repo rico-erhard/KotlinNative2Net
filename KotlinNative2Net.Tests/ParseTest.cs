@@ -70,6 +70,9 @@ typedef struct {
 } math_kref_kotlin_Unit;
 typedef struct {
   math_KNativePtr pinned;
+} math_kref_arithmetic_Callback;
+typedef struct {
+  math_KNativePtr pinned;
 } math_kref_arithmetic_Minus;
 typedef struct {
   math_KNativePtr pinned;
@@ -95,6 +98,11 @@ typedef struct {
   struct {
     struct {
       struct {
+        struct {
+          math_KType* (*_type)(void);
+          math_kref_arithmetic_Callback (*Callback)();
+          math_KInt (*call)(math_kref_arithmetic_Callback thiz, void* f, math_KInt a, math_KInt b);
+        } Callback;
         struct {
           math_KType* (*_type)(void);
           math_kref_arithmetic_Minus (*Minus)(math_KInt a, math_KInt b);
@@ -138,6 +146,11 @@ typedef struct {
       struct {
         struct {
           math_KType* (*_type)(void);
+          math_kref_arithmetic_Callback (*Callback)();
+          math_KInt (*call)(math_kref_arithmetic_Callback thiz, void* f, math_KInt a, math_KInt b);
+        } Callback;
+        struct {
+          math_KType* (*_type)(void);
           math_kref_arithmetic_Minus (*Minus)(math_KInt a, math_KInt b);
           math_KInt (*subtract)(math_kref_arithmetic_Minus thiz);
         } Minus;
@@ -149,7 +162,8 @@ typedef struct {
       } arithmetic;
     } root;
   } kotlin;
-} math_ExportedSymbols;";
+} math_ExportedSymbols;
+";
 
     const string minusFunctions = @"
 math_KType* (*_type)(void);
@@ -242,8 +256,8 @@ math_kref_kotlin_Unit (*createNullableUnit)(void);
         KStruct kotlin = symbols.Childs.Head;
         KStruct root = kotlin.Childs.Head;
         KStruct arithmetic = root.Childs.Head;
-        KStruct minus = arithmetic.Childs[0];
-        KStruct plus = arithmetic.Childs[1];
+        KStruct minus = arithmetic.Childs[1];
+        KStruct plus = arithmetic.Childs[2];
 
         Equal("math_ExportedSymbols", symbols.Name);
         Equal("kotlin", kotlin.Name);
@@ -253,7 +267,7 @@ math_kref_kotlin_Unit (*createNullableUnit)(void);
         Equal("Minus", minus.Name);
 
         Equal(1, symbols.Childs.Count);
-        Equal(2, arithmetic.Childs.Count);
+        Equal(3, arithmetic.Childs.Count);
     }
 
     [Fact]
@@ -274,6 +288,15 @@ math_kref_kotlin_Unit (*createNullableUnit)(void);
         Equal("a", func.Params[0].Name);
         Equal("math_KInt", func.Params[0].Type);
         Equal("b", func.Params[1].Name);
+    }
+
+    [Fact]
+    public void ParseAFunctionWithoutParams()
+    {
+        string oneFunc = @"math_kref_arithmetic_Callback (*Callback)();";
+        Func func = (KFunc)Parser.ParseSignature(oneFunc);
+        Equal("Callback", func.Name);
+        Equal(0, func.Params.Count);
     }
 
     [Fact]
@@ -313,8 +336,8 @@ math_kref_kotlin_Unit (*createNullableUnit)(void);
         KStruct kotlin = symbols.Childs.Head;
         KStruct root = kotlin.Childs.Head;
         KStruct arithmetic = root.Childs.Head;
-        KStruct minus = arithmetic.Childs[0];
-        KStruct plus = arithmetic.Childs[1];
+        KStruct minus = arithmetic.Childs[1];
+        KStruct plus = arithmetic.Childs[2];
         return (symbols, kotlin, root, arithmetic, minus, plus);
     }
 
@@ -340,7 +363,7 @@ math_kref_kotlin_Unit (*createNullableUnit)(void);
         KStruct minus = (KStruct)symbols.FindChild("Minus");
         Equal(3, minus.Funcs.Count);
 
-        KStruct plus = (KStruct)symbols.FindChild("Plus");
+        KStruct plus = (KStruct)symbols.FindChild("arithmetic.Plus");
         Equal(3, plus.Funcs.Count);
         Equal(3, plus.Funcs.Count);
         True(plus.Funcs.Map(x => x.Name).Contains("add"));
@@ -377,16 +400,26 @@ math_kref_kotlin_Unit (*createNullableUnit)(void);
         Equal(1, (int)symbols.FindOffset(disposeString));
 
         KFunc plusCtor = (KFunc)plus.Funcs.Find(x => "Plus" == x.Name);
-        Equal(16, (int)symbols.FindOffset(plusCtor));
+        Equal(19, (int)symbols.FindOffset(plusCtor));
 
         KFunc add = (KFunc)plus.Funcs.Find(x => "add" == x.Name);
-        Equal(17, (int)symbols.FindOffset(add));
+        Equal(20, (int)symbols.FindOffset(add));
 
         KFunc plusType = (KFunc)plus.Funcs.Find(x => "_type" == x.Name);
-        Equal(15, (int)symbols.FindOffset(plusType));
+        Equal(18, (int)symbols.FindOffset(plusType));
 
         KFunc minusType = (KFunc)minus.Funcs.Find(x => "_type" == x.Name);
-        Equal(12, (int)symbols.FindOffset(minusType));
+        Equal(15, (int)symbols.FindOffset(minusType));
+    }
+
+    [Fact]
+    public void ParsePointer()
+    {
+        KHeader header = (KHeader)Parser.ParseHeader(mathHeader);
+        KStruct symbols = (KStruct)header.Childs.Find(x => x.Name == header.SymbolsType);
+        KStruct callback = (KStruct)symbols.FindChild("arithmetic.Callback");
+        Equal(3, callback.Funcs.Count);
+        True(callback.Funcs.Map(x => x.Name).Contains("call"));
     }
 
     [Fact]

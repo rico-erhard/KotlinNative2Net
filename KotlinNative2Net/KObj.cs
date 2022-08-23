@@ -27,7 +27,14 @@ class KObj : DynamicObject
         static bool IsPtrVoid(KFunc f)
         => 1 == f.Params.Count && "void" == f.RetVal.Type;
 
-        (object? result, bool success) go(KFunc f, object?[] args)
+        static bool IsPtrIntInt_Int(KFunc f)
+        => 4 == f.Params.Count
+        && f.Params[1].Type.EndsWith("void*")
+        && f.Params[2].Type.EndsWith("KInt")
+        && f.Params[3].Type.EndsWith("KInt")
+        && f.RetVal.Type.EndsWith("KInt");
+
+        (object? result, bool success) InvokeKLib(KFunc f, object?[] args)
         {
             if (IsPtrInt(f))
             {
@@ -46,6 +53,16 @@ class KObj : DynamicObject
                     return (null, true);
                 }, (null, false));
             }
+            else if (IsPtrIntInt_Int(f))
+            {
+                return kLib.GetFunc<PtrPtrIntInt_Int>(f)
+                .Match(d =>
+                {
+                    object localResult = d(handle, (IntPtr)args[0], (int)args[1], (int)args[2]);
+                    return (localResult, true);
+                }, (null, false));
+
+            }
             return (null, false);
         }
 
@@ -56,7 +73,7 @@ class KObj : DynamicObject
         };
 
         (object? tmpResult, bool success) = kFunc
-            .Map(f => go(f, args ?? new object?[0]))
+            .Map(f => InvokeKLib(f, args ?? new object?[0]))
             .IfNone((null, false));
 
         result = tmpResult;

@@ -87,7 +87,7 @@ public static class Parser
 
     const string commentPattern = @"\s*(?:/\*[^*]*\*/)*\s*";
 
-    const string functionsPattern = "(" + commentPattern + @"\s*(\w+\*?)\s+\(\*(\w+)\)\((\s*(\w+\*?)\s*(\w+)?,?)+\);\s*" + ")*";
+    const string functionsPattern = "(" + commentPattern + @"\s*(\w+\*?)\s+\(\*(\w+)\)\((\s*(\w+\*?)\s*(\w+)?,?)*\);\s*" + ")*";
 
     const string structStart = @"(\s*(typedef )?\s*struct\s+{" + commentPattern + functionsPattern + commentPattern;
 

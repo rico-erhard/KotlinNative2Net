@@ -91,15 +91,22 @@ public class KLib : DynamicObject, IDisposable
 
             if (args is not null && args.Length == func.Params.Length)
             {
-                if (func.Params.All(x => x.Type.EndsWith("KInt")) && func.RetVal.Type.Contains("_kref_"))
+                if (func.Params.IsEmpty && func.RetVal.Type.Contains("_kref_") && 0 == args.Length)
                 {
-                    GetFunc<IntPtr_IntInt>(func).Do(f =>
+                    GetFunc<Void_Ptr>(func).Do(f =>
                     {
-                        IntPtr hi = f((int)args[0], (int)args[1]);
-                        tmpResult = new KObj(hi, Thiz, this);
+                        IntPtr kPtr = f();
+                        tmpResult = new KObj(kPtr, Thiz, this);
                     });
                 }
-
+                else if (func.Params.All(x => x.Type.EndsWith("KInt")) && func.RetVal.Type.Contains("_kref_") && 2 == args.Length)
+                {
+                    GetFunc<IntInt_Ptr>(func).Do(f =>
+                    {
+                        IntPtr kPtr = f((int)args[0], (int)args[1]);
+                        tmpResult = new KObj(kPtr, Thiz, this);
+                    });
+                }
             }
             return tmpResult;
         }
