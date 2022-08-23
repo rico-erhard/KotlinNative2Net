@@ -1,0 +1,3 @@
+---
+typedef int  (*IntInt_Int)(int, int);
+
