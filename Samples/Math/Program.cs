@@ -21,7 +21,8 @@ unsafe
 
     dynamic dynCallback = dynKLib.root.arithmetic.Callback.Callback();
     delegate* unmanaged<int, int, int> netAdd = &NetAdd;
-    int result = dynCallback.call<int>((IntPtr)netAdd, 2, 3);
+    int netAddResult = dynCallback.call<int>((IntPtr)netAdd, 2, 3);
+    WriteLine($"2 + 3 = {netAddResult}");
 
     dynPlus.Dispose();
     dynMinus.Dispose();
