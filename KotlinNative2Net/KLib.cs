@@ -7,6 +7,7 @@ namespace KotlinNative2Net;
 
 public class KLib : DynamicObject, IDisposable
 {
+    public static Seq<Invoker> Invokers = Seq<Invoker>();
 
     readonly IntPtr libHandle;
 
@@ -19,6 +20,13 @@ public class KLib : DynamicObject, IDisposable
     public readonly KStruct Thiz;
 
     bool disposed = false;
+
+    static KLib()
+    {
+        Invokers = Invokers
+            .Add(new VoidCtorInvoker())
+            .Add(new IntIntCtorInvoker());
+    }
 
     public KLib(IntPtr libHandle, IntPtr symbolsHandle, KHeader header, KStruct symbols, KStruct thiz)
     {
@@ -83,39 +91,6 @@ public class KLib : DynamicObject, IDisposable
         disposed = true;
     }
 
-    public override bool TryInvokeMember(System.Dynamic.InvokeMemberBinder binder, object?[]? args, out object? result)
-    {
-        object? go(KFunc func)
-        {
-            object? tmpResult = null;
-
-            if (args is not null && args.Length == func.Params.Length)
-            {
-                if (func.Params.IsEmpty && func.RetVal.Type.Contains("_kref_") && 0 == args.Length)
-                {
-                    GetFunc<Void_Ptr>(func).Do(f =>
-                    {
-                        IntPtr kPtr = f();
-                        tmpResult = new KObj(kPtr, Thiz, this);
-                    });
-                }
-                else if (func.Params.All(x => x.Type.EndsWith("KInt")) && func.RetVal.Type.Contains("_kref_") && 2 == args.Length)
-                {
-                    GetFunc<IntInt_Ptr>(func).Do(f =>
-                    {
-                        IntPtr kPtr = f((int)args[0], (int)args[1]);
-                        tmpResult = new KObj(kPtr, Thiz, this);
-                    });
-                }
-            }
-            return tmpResult;
-        }
-
-        Option<KFunc> func = Symbols.FindFunc(binder.Name);
-        result = func.Map(go).IfNoneUnsafe(() => null);
-        return result is not null;
-    }
-    
     public override bool TryGetMember(System.Dynamic.GetMemberBinder binder, out object? result)
     {
         Option<KLib> tmpResult = Symbols.FindChild(binder.Name)
@@ -123,4 +98,61 @@ public class KLib : DynamicObject, IDisposable
         result = tmpResult.IfNoneUnsafe(() => null);
         return null != result;
     }
+
+    public override bool TryInvokeMember(System.Dynamic.InvokeMemberBinder binder, object?[]? args, out object? result)
+    {
+        object? go(KFunc func)
+        {
+            object? result = null;
+            if (args is not null && args.Length == func.Params.Length)
+            {
+                Invokers
+                    .Filter(x => x.IsMatch(func, args))
+                    .HeadOrNone()
+                    .IfSome(x =>
+                    {
+                        result = x.Invoke(this, func, args);
+                    });
+            }
+            return result;
+        }
+
+        Option<KFunc> func = Symbols.FindFunc(binder.Name);
+        result = func.Map(go).IfNoneUnsafe(() => null);
+        return result is not null;
+    }
+
 }
+
+public abstract class Invoker
+{
+    public abstract bool IsMatch(KFunc func, object[] args);
+    public abstract object? Invoke(KLib klib, KFunc func, object?[] args);
+}
+
+public class VoidCtorInvoker : Invoker
+{
+    public override object? Invoke(KLib kLib, KFunc func, object?[] args)
+    => kLib
+        .GetFunc<Void_Ptr>(func)
+        .Map(f => new KObj(f(), kLib.Thiz, kLib))
+        .IfNoneUnsafe(() => null);
+
+
+    public override bool IsMatch(KFunc func, object[] args)
+    => func.Params.IsEmpty && func.RetVal.Type.Contains("_kref_") && 0 == args.Length;
+}
+
+public class IntIntCtorInvoker : Invoker
+{
+    public override object? Invoke(KLib kLib, KFunc func, object?[] args)
+    => kLib
+        .GetFunc<IntInt_Ptr>(func)
+        .Map(f => new KObj(f((int)args[0], (int)args[1]), kLib.Thiz, kLib))
+        .IfNoneUnsafe(() => null);
+
+    public override bool IsMatch(KFunc func, object[] args)
+    => func.Params.All(x => x.Type.EndsWith("KInt")) && func.RetVal.Type.Contains("_kref_") && 2 == args.Length;
+}
+
+
