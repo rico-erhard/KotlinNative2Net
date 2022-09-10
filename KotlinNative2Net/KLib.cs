@@ -7,7 +7,7 @@ namespace KotlinNative2Net;
 
 public class KLib : DynamicObject, IDisposable
 {
-    public static Seq<Invoker> Invokers = Seq<Invoker>();
+    internal readonly Seq<Invoker> invokers = Seq<Invoker>();
 
     readonly IntPtr libHandle;
 
@@ -23,18 +23,16 @@ public class KLib : DynamicObject, IDisposable
 
     static KLib()
     {
-        Invokers = Invokers
-            .Add(new VoidCtorInvoker())
-            .Add(new IntIntCtorInvoker());
     }
 
-    public KLib(IntPtr libHandle, IntPtr symbolsHandle, KHeader header, KStruct symbols, KStruct thiz)
+    public KLib(IntPtr libHandle, IntPtr symbolsHandle, KHeader header, KStruct symbols, KStruct thiz, Seq<Invoker> invokers)
     {
         this.libHandle = libHandle;
         this.symbolsHandle = symbolsHandle;
         Header = header;
         Symbols = symbols;
         Thiz = thiz;
+        this.invokers = invokers;
     }
 
     public static Option<KLib> Of(string apiPath, string sharedLibPath)
@@ -52,7 +50,14 @@ public class KLib : DynamicObject, IDisposable
         IntPtr symbolsHandle = symbolsFunc();
         KStruct symbols = (KStruct)header.Childs.Find(x => x.Name == header.SymbolsType);
 
-        return new KLib(libHandle, symbolsHandle, header, symbols, symbols);
+        Seq<Invoker> invokers = Seq<Invoker>()
+            .Add(new VoidCtorInvoker())
+            .Add(new IntIntCtorInvoker())
+            .Add(new PtrIntInvoker())
+            .Add(new PtrVoidInvoker())
+            .Add(new PtrIntIntIntInvoker());
+
+        return new KLib(libHandle, symbolsHandle, header, symbols, symbols, invokers);
     }).ToOption();
 
     static Option<T> GetFuncAtOffset<T>(IntPtr symbols, int offset)
@@ -72,7 +77,7 @@ public class KLib : DynamicObject, IDisposable
     public Option<T> GetFunc<T>(string fullName)
     => Symbols.FindFunc(fullName).Bind(f => GetFunc<T>(f));
 
-    // Public implementation of Dispose pattern callable by consumers.
+
     public void Dispose()
     {
         Dispose(true);
@@ -94,7 +99,7 @@ public class KLib : DynamicObject, IDisposable
     public override bool TryGetMember(System.Dynamic.GetMemberBinder binder, out object? result)
     {
         Option<KLib> tmpResult = Symbols.FindChild(binder.Name)
-            .Map(c => new KLib(libHandle, symbolsHandle, Header, Symbols, c));
+            .Map(c => new KLib(libHandle, symbolsHandle, Header, Symbols, c, invokers));
         result = tmpResult.IfNoneUnsafe(() => null);
         return null != result;
     }
@@ -103,18 +108,16 @@ public class KLib : DynamicObject, IDisposable
     {
         object? go(KFunc func)
         {
-            object? result = null;
+            object? tmpResult = None;
             if (args is not null && args.Length == func.Params.Length)
             {
-                Invokers
+                tmpResult = invokers
                     .Filter(x => x.IsMatch(func, args))
                     .HeadOrNone()
-                    .IfSome(x =>
-                    {
-                        result = x.Invoke(this, func, args);
-                    });
+                    .Map(x => x.Invoke(this, func, IntPtr.Zero, args))
+                    .IfNoneUnsafe(() => null);
             }
-            return result;
+            return tmpResult;
         }
 
         Option<KFunc> func = Symbols.FindFunc(binder.Name);
@@ -127,17 +130,16 @@ public class KLib : DynamicObject, IDisposable
 public abstract class Invoker
 {
     public abstract bool IsMatch(KFunc func, object[] args);
-    public abstract object? Invoke(KLib klib, KFunc func, object?[] args);
+    public abstract object? Invoke(KLib kLib, KFunc func, IntPtr kObj, object?[] args);
 }
 
 public class VoidCtorInvoker : Invoker
 {
-    public override object? Invoke(KLib kLib, KFunc func, object?[] args)
+    public override object? Invoke(KLib kLib, KFunc func, IntPtr kObj, object?[] args)
     => kLib
         .GetFunc<Void_Ptr>(func)
         .Map(f => new KObj(f(), kLib.Thiz, kLib))
         .IfNoneUnsafe(() => null);
-
 
     public override bool IsMatch(KFunc func, object[] args)
     => func.Params.IsEmpty && func.RetVal.Type.Contains("_kref_") && 0 == args.Length;
@@ -145,7 +147,7 @@ public class VoidCtorInvoker : Invoker
 
 public class IntIntCtorInvoker : Invoker
 {
-    public override object? Invoke(KLib kLib, KFunc func, object?[] args)
+    public override object? Invoke(KLib kLib, KFunc func, IntPtr kObj, object?[] args)
     => kLib
         .GetFunc<IntInt_Ptr>(func)
         .Map(f => new KObj(f((int)args[0], (int)args[1]), kLib.Thiz, kLib))
