@@ -115,7 +115,7 @@ public class KLib : DynamicObject, IDisposable
         result = func.Map(go).IfNoneUnsafe(() => null);
         return result is not null;
     }
-
+    
     public override bool TryGetMember(System.Dynamic.GetMemberBinder binder, out object? result)
     {
         Option<KLib> tmpResult = Symbols.FindChild(binder.Name)

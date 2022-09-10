@@ -12,47 +12,6 @@ public record KStruct(string FullName, string Name, Seq<KFunc> Funcs, Seq<KStruc
 
 public record KHeader(string SymbolsType, string SymbolsFunc, Seq<KStruct> Childs);
 
-public static class KStructEx
-{
-    static Seq<KStruct> FlattenChilds(this KStruct s)
-    {
-        static Seq<KStruct> go(KStruct start, Seq<KStruct> acc)
-        {
-            return start.Childs.Fold(acc.Append(start.Childs), (acc, next) => go(next, acc));
-        }
-        return go(s, Seq<KStruct>().Add(s));
-    }
-
-    static Seq<int> Offsets(this KStruct s)
-    {
-        static Seq<int> go(KStruct start, Seq<int> acc)
-        {
-            int nextOffset = acc.LastOrDefault() + start.Funcs.Length;
-            return start.Childs.Fold(
-                acc.Add(nextOffset),
-                (acc, next) => go(next, acc));
-        }
-        return go(s, Seq<int>().Add(0));
-    }
-
-    public static Option<int> FindOffset(this KStruct s, KFunc func)
-    {
-        Seq<KStruct> childs = FlattenChilds(s);
-        Seq<int> offsets = Offsets(s);
-        Seq<(KStruct parent, int offset)> childsAndOffsets = childs.Zip(offsets);
-        Option<KStruct> parent = childs.Find(x => x.Funcs.Contains(func));
-        return childsAndOffsets
-            .Find(t => t.parent == parent)
-            .Map(t => t.offset + System.Array.IndexOf(t.parent.Funcs.ToArray(), func));
-    }
-
-    public static Option<KStruct> FindChild(this KStruct s, string name)
-    => s.FlattenChilds().Find(x => x.FullName.EndsWith(name));
-
-    public static Option<KFunc> FindFunc(this KStruct s, string name)
-    => s.FlattenChilds().Bind(x => x.Funcs).Find(x => x.FullName.EndsWith(name));
-}
-
 public static class Parser
 {
 
