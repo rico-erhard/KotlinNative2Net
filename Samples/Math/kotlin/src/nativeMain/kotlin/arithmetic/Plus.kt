@@ -18,3 +18,7 @@ class Minus(private val a: Int, private val b: Int) {
 class Callback() {
     fun call(f: IntInt_Int, a: Int, b: Int): Int = f(a, b)
 }
+
+class FloatPlus() {
+    fun add(a: Double, b: Double) = a + b
+}
