@@ -25,6 +25,7 @@ unsafe
     int netAddResult = dynCallback.call<int>((IntPtr)netAdd, 2, 3);
     WriteLine($"2 + 3 = {netAddResult}");
 
+    // This uses the PtrDoubleDouble_DoubleInvoker below.
     dynamic dynFloatPlus = dynKLib.root.arithmetic.FloatPlus.FloatPlus();
     double pi = dynFloatPlus.add(PI - 1, 1d);
     WriteLine($"(π - 1) + 1 = {pi}");

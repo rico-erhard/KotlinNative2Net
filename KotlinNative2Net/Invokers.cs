@@ -8,9 +8,9 @@ public static class Invokers
     public static Seq<Invoker> Default = Seq<Invoker>()
         .Add(new VoidCtorInvoker())
         .Add(new IntIntCtorInvoker())
-        .Add(new PtrIntInvoker())
-        .Add(new PtrVoidInvoker())
-        .Add(new PtrIntIntIntInvoker());
+        .Add(new Ptr_IntInvoker())
+        .Add(new Ptr_VoidInvoker())
+        .Add(new PtrIntInt_IntInvoker());
 }
 
 public abstract class Invoker
@@ -43,7 +43,7 @@ public class IntIntCtorInvoker : Invoker
     => func.Params.All(x => x.Type.EndsWith("KInt")) && func.RetVal.Type.Contains("_kref_") && 2 == args.Length;
 }
 
-public class PtrIntInvoker : Invoker
+public class Ptr_IntInvoker : Invoker
 {
     public override object? Invoke(KLib kLib, KFunc func, IntPtr kObj, object?[] args)
     => kLib
@@ -55,7 +55,7 @@ public class PtrIntInvoker : Invoker
     => 1 == func.Params.Count && func.RetVal.Type.EndsWith("KInt");
 }
 
-public class PtrVoidInvoker : Invoker
+public class Ptr_VoidInvoker : Invoker
 {
     public override object? Invoke(KLib kLib, KFunc func, IntPtr kObj, object?[] args)
     => kLib.GetFunc<Ptr_Void>(func)
@@ -65,7 +65,7 @@ public class PtrVoidInvoker : Invoker
     => 1 == func.Params.Count && "void" == func.RetVal.Type;
 }
 
-public class PtrIntIntIntInvoker : Invoker
+public class PtrIntInt_IntInvoker : Invoker
 {
     public override object? Invoke(KLib kLib, KFunc func, IntPtr kObj, object?[] args)
     => kLib
