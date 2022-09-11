@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using LanguageExt;
 using static LanguageExt.Prelude;
 using System.Collections.Generic;
+using FluentAssertions;
 
 namespace KotlinNative2Net.Tests;
 
@@ -73,6 +74,9 @@ typedef struct {
 } math_kref_arithmetic_Callback;
 typedef struct {
   math_KNativePtr pinned;
+} math_kref_arithmetic_FloatPlus;
+typedef struct {
+  math_KNativePtr pinned;
 } math_kref_arithmetic_Minus;
 typedef struct {
   math_KNativePtr pinned;
@@ -103,6 +107,11 @@ typedef struct {
           math_kref_arithmetic_Callback (*Callback)();
           math_KInt (*call)(math_kref_arithmetic_Callback thiz, void* f, math_KInt a, math_KInt b);
         } Callback;
+        struct {
+          math_KType* (*_type)(void);
+          math_kref_arithmetic_FloatPlus (*FloatPlus)();
+          math_KDouble (*add)(math_kref_arithmetic_FloatPlus thiz, math_KDouble a, math_KDouble b);
+        } FloatPlus;
         struct {
           math_KType* (*_type)(void);
           math_kref_arithmetic_Minus (*Minus)(math_KInt a, math_KInt b);
@@ -294,7 +303,7 @@ math_kref_kotlin_Unit (*createNullableUnit)(void);
     public void ParseAFunctionWithoutParams()
     {
         string oneFunc = @"math_kref_arithmetic_Callback (*Callback)();";
-        Func func = (KFunc)Parser.ParseSignature(oneFunc);
+        KFunc func = (KFunc)Parser.ParseSignature(oneFunc);
         Equal("Callback", func.Name);
         Equal(0, func.Params.Count);
     }
@@ -423,10 +432,11 @@ math_kref_kotlin_Unit (*createNullableUnit)(void);
     }
 
     [Fact]
-    public void ParseHeader()
+    public void FindFloatPlus()
     {
-        //Equal(1, typedefMatches.Count);
-        //KHeader decl = (KHeader)Parser.ParseHeader(mathHeader);
-        //Equal("math_symbols", decl.Init);
+        KHeader header = (KHeader)Parser.ParseHeader(mathHeader);
+        KStruct symbols = (KStruct)header.Childs.Find(x => x.Name == header.SymbolsType);
+        KFunc plus = (KFunc)symbols.FindFunc("Plus");
+        plus.Name.Should().Be("Plus");
     }
 }
