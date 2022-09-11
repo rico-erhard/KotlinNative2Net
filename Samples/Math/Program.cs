@@ -43,7 +43,6 @@ unsafe
     }
 }
 
-
 delegate double PtrDoubleDouble_Double(IntPtr kObj, double a, double b);
 
 class PtrDoubleDouble_DoubleInvoker : Invoker
@@ -59,3 +58,4 @@ class PtrDoubleDouble_DoubleInvoker : Invoker
         && func.Params.Skip(1).All(x => x.Type.EndsWith("KDouble"))
         && func.RetVal.Type.EndsWith("KDouble");
 }
+

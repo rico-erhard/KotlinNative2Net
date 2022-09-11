@@ -49,3 +49,4 @@ public static class KStructEx
     public static Option<KFunc> FindFunc(this KStruct s, string name)
     => FindFunc(s, x => x.FullName.EndsWith('.' + name));
 }
+

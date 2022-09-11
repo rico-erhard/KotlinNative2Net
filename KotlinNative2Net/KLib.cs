@@ -5,16 +5,6 @@ using static LanguageExt.Prelude;
 
 namespace KotlinNative2Net;
 
-public static class Invokers
-{
-    public static Seq<Invoker> Default = Seq<Invoker>()
-        .Add(new VoidCtorInvoker())
-        .Add(new IntIntCtorInvoker())
-        .Add(new PtrIntInvoker())
-        .Add(new PtrVoidInvoker())
-        .Add(new PtrIntIntIntInvoker());
-}
-
 public class KLib : DynamicObject, IDisposable
 {
     readonly IntPtr libHandle;
@@ -132,35 +122,4 @@ public class KLib : DynamicObject, IDisposable
     }
 
 }
-
-public abstract class Invoker
-{
-    public abstract bool IsMatch(KFunc func, object[] args);
-    public abstract object? Invoke(KLib kLib, KFunc func, IntPtr kObj, object?[] args);
-}
-
-public class VoidCtorInvoker : Invoker
-{
-    public override object? Invoke(KLib kLib, KFunc func, IntPtr kObj, object?[] args)
-    => kLib
-        .GetFunc<Void_Ptr>(func)
-        .Map(f => new KObj(f(), kLib.Thiz, kLib))
-        .IfNoneUnsafe(() => null);
-
-    public override bool IsMatch(KFunc func, object[] args)
-    => func.Params.IsEmpty && func.RetVal.Type.Contains("_kref_") && 0 == args.Length;
-}
-
-public class IntIntCtorInvoker : Invoker
-{
-    public override object? Invoke(KLib kLib, KFunc func, IntPtr kObj, object?[] args)
-    => kLib
-        .GetFunc<IntInt_Ptr>(func)
-        .Map(f => new KObj(f((int)args[0], (int)args[1]), kLib.Thiz, kLib))
-        .IfNoneUnsafe(() => null);
-
-    public override bool IsMatch(KFunc func, object[] args)
-    => func.Params.All(x => x.Type.EndsWith("KInt")) && func.RetVal.Type.Contains("_kref_") && 2 == args.Length;
-}
-
 

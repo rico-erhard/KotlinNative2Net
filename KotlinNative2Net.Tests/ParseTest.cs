@@ -2,8 +2,6 @@ using Xunit;
 using static Xunit.Assert;
 using System.Text.RegularExpressions;
 using LanguageExt;
-using static LanguageExt.Prelude;
-using System.Collections.Generic;
 using FluentAssertions;
 
 namespace KotlinNative2Net.Tests;
@@ -440,3 +438,4 @@ math_kref_kotlin_Unit (*createNullableUnit)(void);
         plus.Name.Should().Be("Plus");
     }
 }
+
