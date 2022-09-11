@@ -37,9 +37,15 @@ public static class KStructEx
             .Map(t => t.offset + System.Array.IndexOf(t.parent.Funcs.ToArray(), func));
     }
 
+    public static Option<KStruct> FindChild(this KStruct s , Func<KStruct, bool> pred)
+    => s.FlattenChilds().Find(pred);
+
     public static Option<KStruct> FindChild(this KStruct s, string name)
-    => s.FlattenChilds().Find(x => x.FullName.EndsWith(name));
+    => FindChild(s, x => x.FullName.EndsWith('.' + name));
+
+    public static Option<KFunc> FindFunc(this KStruct s, Func<KFunc, bool> pred)
+    => s.FlattenChilds().Bind(x => x.Funcs).Find(pred);
 
     public static Option<KFunc> FindFunc(this KStruct s, string name)
-    => s.FlattenChilds().Bind(x => x.Funcs).Find(x => x.FullName.EndsWith(name));
+    => FindFunc(s, x => x.FullName.EndsWith('.' + name));
 }
