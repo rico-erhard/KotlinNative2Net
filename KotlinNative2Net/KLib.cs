@@ -5,10 +5,18 @@ using static LanguageExt.Prelude;
 
 namespace KotlinNative2Net;
 
+public static class Invokers
+{
+    public static Seq<Invoker> Default = Seq<Invoker>()
+        .Add(new VoidCtorInvoker())
+        .Add(new IntIntCtorInvoker())
+        .Add(new PtrIntInvoker())
+        .Add(new PtrVoidInvoker())
+        .Add(new PtrIntIntIntInvoker());
+}
+
 public class KLib : DynamicObject, IDisposable
 {
-    internal readonly Seq<Invoker> invokers = Seq<Invoker>();
-
     readonly IntPtr libHandle;
 
     readonly IntPtr symbolsHandle;
@@ -21,6 +29,8 @@ public class KLib : DynamicObject, IDisposable
 
     bool disposed = false;
 
+    internal readonly Seq<Invoker> Invokers = Seq<Invoker>();
+
     static KLib()
     {
     }
@@ -32,10 +42,13 @@ public class KLib : DynamicObject, IDisposable
         Header = header;
         Symbols = symbols;
         Thiz = thiz;
-        this.invokers = invokers;
+        this.Invokers = invokers;
     }
 
     public static Option<KLib> Of(string apiPath, string sharedLibPath)
+    => Of(apiPath, sharedLibPath, KotlinNative2Net.Invokers.Default);
+
+    public static Option<KLib> Of(string apiPath, string sharedLibPath, Seq<Invoker> invokers)
     => Try(() =>
     {
         string headerText = File.ReadAllText(apiPath);
@@ -49,13 +62,6 @@ public class KLib : DynamicObject, IDisposable
         Void_Ptr symbolsFunc = Marshal.GetDelegateForFunctionPointer<Void_Ptr>(symbolsFuncAddr);
         IntPtr symbolsHandle = symbolsFunc();
         KStruct symbols = (KStruct)header.Childs.Find(x => x.Name == header.SymbolsType);
-
-        Seq<Invoker> invokers = Seq<Invoker>()
-            .Add(new VoidCtorInvoker())
-            .Add(new IntIntCtorInvoker())
-            .Add(new PtrIntInvoker())
-            .Add(new PtrVoidInvoker())
-            .Add(new PtrIntIntIntInvoker());
 
         return new KLib(libHandle, symbolsHandle, header, symbols, symbols, invokers);
     }).ToOption();
@@ -98,9 +104,9 @@ public class KLib : DynamicObject, IDisposable
 
     public override bool TryGetMember(System.Dynamic.GetMemberBinder binder, out object? result)
     {
-        Option<KLib> tmpResult = Symbols.FindChild(binder.Name)
-            .Map(c => new KLib(libHandle, symbolsHandle, Header, Symbols, c, invokers));
-        result = tmpResult.IfNoneUnsafe(() => null);
+        result = Symbols.FindChild(binder.Name)
+            .Map<KLib?>(c => new KLib(libHandle, symbolsHandle, Header, Symbols, c, Invokers))
+            .IfNoneUnsafe(() => null);
         return null != result;
     }
 
@@ -111,10 +117,10 @@ public class KLib : DynamicObject, IDisposable
             object? tmpResult = None;
             if (args is not null && args.Length == func.Params.Length)
             {
-                tmpResult = invokers
+                tmpResult = Invokers
                     .Filter(x => x.IsMatch(func, args))
                     .HeadOrNone()
-                    .Map(x => x.Invoke(this, func, IntPtr.Zero, args))
+                    .Map<object?>(x => x.Invoke(this, func, IntPtr.Zero, args))
                     .IfNoneUnsafe(() => null);
             }
             return tmpResult;

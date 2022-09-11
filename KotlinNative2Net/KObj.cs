@@ -23,7 +23,7 @@ class KObj : DynamicObject
     public override bool TryInvokeMember(System.Dynamic.InvokeMemberBinder binder, object?[]? args, out object? result)
     {
         (object? result, bool success) InvokeKLib(KFunc f, object?[] args)
-        => kLib.invokers
+        => kLib.Invokers
             .Filter(x => x.IsMatch(f, args))
             .HeadOrNone()
             .Match(
